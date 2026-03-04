@@ -230,7 +230,8 @@ function renderPopupHTML(
       ? `${Math.round(station.distance * 1000)} m`
       : `${station.distance.toFixed(1)} km`;
 
-  const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${station.lat},${station.lng}`;
+  const destination = encodeURIComponent(`${station.addr}, ${station.cp} ${station.city}`);
+  const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${destination}`;
 
   return `
     <div style="min-width:180px;font-family:Inter,system-ui,sans-serif;">
@@ -379,7 +380,7 @@ export function MapView({
         <button
           onClick={onGeolocate}
           disabled={geolocating}
-          className={`absolute right-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-lg ring-1 ring-gray-200 transition-all hover:bg-gray-50 disabled:opacity-60 md:bottom-6 ${hasPanel ? (panelOpen ? 'bottom-[340px]' : 'bottom-16') : 'bottom-20'}`}
+          className={`absolute right-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-lg ring-1 ring-gray-200 transition-all hover:bg-gray-50 disabled:opacity-60 md:bottom-6 ${hasPanel ? `${panelOpen ? 'bottom-[340px]' : 'bottom-16'} md:right-[300px]` : 'bottom-20'}`}
           title="Me localiser"
         >
           {geolocating ? (
