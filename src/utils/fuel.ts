@@ -18,7 +18,7 @@ export const FUEL_LABELS: Record<FuelType, string> = {
   GPLc: 'GPLc',
 };
 
-export const ALL_FUELS: FuelType[] = ['Gazole', 'SP95', 'E10', 'SP98', 'E85', 'GPLc'];
+export const ALL_FUELS: FuelType[] = ['Gazole', 'E10', 'SP98', 'SP95', 'E85', 'GPLc'];
 
 export function getFuelPrice(station: Station, fuel: FuelType): number | null {
   return station.fuels[fuel]?.p ?? null;
