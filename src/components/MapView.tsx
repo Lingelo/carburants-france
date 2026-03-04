@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet.markercluster';
 import type { FuelType, Station } from '../types';
-import { FUEL_COLORS, getFuelPrice } from '../utils/fuel';
+import { FUEL_COLORS, FUEL_LABELS, getFuelPrice } from '../utils/fuel';
 
 // Fix default marker icons in bundled environments
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -218,7 +218,7 @@ function renderPopupHTML(
       return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 0;">
         <span style="display:flex;align-items:center;gap:6px;">
           <span style="width:8px;height:8px;border-radius:50%;background:${color};display:inline-block;"></span>
-          <span style="font-size:13px;color:#374151;">${fuel}</span>
+          <span style="font-size:13px;color:#374151;">${FUEL_LABELS[fuel as FuelType]}</span>
         </span>
         <span style="font-size:13px;font-weight:600;color:#111827;">${price} \u20AC</span>
       </div>`;
