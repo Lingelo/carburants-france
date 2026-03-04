@@ -84,7 +84,7 @@ export function SearchBar({ query, onSearch, results, loading, onSelect, onClear
           value={query}
           onChange={(e) => onSearch(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Rechercher une ville (rayon 15 km)..."
+          placeholder="Rechercher une ville (rayon 10 km)..."
           className="w-full rounded-xl border-0 bg-white py-2.5 pl-10 pr-10 text-sm text-gray-900 shadow-lg ring-1 ring-gray-200 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         {query && (

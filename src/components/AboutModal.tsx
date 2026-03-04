@@ -48,7 +48,7 @@ export function AboutModal({ onClose, lastUpdate }: Props) {
           </p>
           <p>
             Recherchez votre ville, choisissez votre carburant et trouvez la station la moins
-            chère dans un rayon de 15 km.
+            chère dans un rayon de 10 km.
           </p>
         </div>
 

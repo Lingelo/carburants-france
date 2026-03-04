@@ -14,7 +14,7 @@ import { StationPanel } from './components/StationPanel';
 import { AboutModal } from './components/AboutModal';
 import { timeAgo, FUEL_LABELS } from './utils/fuel';
 
-const SEARCH_RADIUS_KM = 15;
+const SEARCH_RADIUS_KM = 10;
 
 interface StationWithDistance extends Station {
   distance: number;
