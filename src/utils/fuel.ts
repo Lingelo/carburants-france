@@ -12,7 +12,7 @@ export const FUEL_COLORS: Record<FuelType, string> = {
 export const FUEL_LABELS: Record<FuelType, string> = {
   SP95: 'SP95',
   SP98: 'SP98',
-  E10: 'E10',
+  E10: 'SP95-E10',
   Gazole: 'Gazole',
   E85: 'E85',
   GPLc: 'GPLc',
