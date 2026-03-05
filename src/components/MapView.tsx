@@ -235,7 +235,19 @@ function renderPopupHTML(
     ? `${station.brand}, ${station.addr}, ${station.cp} ${station.city}`
     : `${station.addr}, ${station.cp} ${station.city}`;
   const destination = encodeURIComponent(destLabel);
-  const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${destination}`;
+
+  const ua = navigator.userAgent;
+  const isIOS = /iPad|iPhone|iPod/.test(ua);
+  const isAndroid = /Android/.test(ua);
+
+  let navUrl: string;
+  if (isAndroid || isIOS) {
+    // geo: URI triggers system app picker on Android and iOS 17+
+    // Falls back to default maps app on older iOS
+    navUrl = `geo:${station.lat},${station.lng}?q=${station.lat},${station.lng}(${destination})`;
+  } else {
+    navUrl = `https://www.google.com/maps/dir/?api=1&destination=${destination}`;
+  }
 
   const brandHTML = station.brand
     ? (() => {
@@ -253,7 +265,7 @@ function renderPopupHTML(
       <div style="font-weight:600;font-size:13px;color:#1f2937;margin-bottom:2px;">${station.addr}</div>
       <div style="font-size:11px;color:#9ca3af;margin-bottom:8px;">${station.city} \u00b7 ${station.cp} \u00b7 ${distStr}</div>
       ${fuels}
-      <a href="${mapsUrl}" target="_blank" rel="noopener noreferrer"
+      <a href="${navUrl}" target="_blank" rel="noopener noreferrer"
          style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:10px;padding:7px 0;background:#3b82f6;color:white;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none;cursor:pointer;">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
