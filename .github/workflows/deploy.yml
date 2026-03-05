@@ -3,8 +3,6 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
-    paths-ignore:
-      - 'brands-cache.json'
   workflow_dispatch:
 
 permissions:
