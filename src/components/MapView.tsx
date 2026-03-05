@@ -231,7 +231,10 @@ function renderPopupHTML(
       ? `${Math.round(station.distance * 1000)} m`
       : `${station.distance.toFixed(1)} km`;
 
-  const destination = encodeURIComponent(`${station.addr}, ${station.cp} ${station.city}`);
+  const destLabel = station.brand
+    ? `${station.brand}, ${station.addr}, ${station.cp} ${station.city}`
+    : `${station.addr}, ${station.cp} ${station.city}`;
+  const destination = encodeURIComponent(destLabel);
   const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${destination}`;
 
   const brandHTML = station.brand
