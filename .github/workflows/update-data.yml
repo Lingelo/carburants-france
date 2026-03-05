@@ -16,47 +16,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  update-data:
-    runs-on: ubuntu-latest
-    outputs:
-      has_changes: ${{ steps.commit.outputs.has_changes }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Process fuel data
-        run: node scripts/process-data.mjs
-
-      - name: Commit and push
-        id: commit
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add public/data/
-          if git diff --staged --quiet; then
-            echo "No changes to commit"
-            echo "has_changes=false" >> "$GITHUB_OUTPUT"
-          else
-            git commit -m "chore: update fuel price data $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-            git push
-            echo "has_changes=true" >> "$GITHUB_OUTPUT"
-          fi
-
-  build-and-deploy:
-    needs: update-data
-    if: needs.update-data.outputs.has_changes == 'true'
+  update-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: main
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -67,6 +31,22 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Generate fuel data
+        run: node scripts/process-data.mjs
+
+      - name: Commit brands cache if changed
+        id: commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add brands-cache.json
+          if git diff --staged --quiet; then
+            echo "No brand changes"
+          else
+            git commit -m "chore: update brands cache $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            git push
+          fi
+
       - name: Build
         run: npm run build
 
@@ -76,4 +56,5 @@ jobs:
           path: dist
 
       - name: Deploy to GitHub Pages
+        id: deployment
         uses: actions/deploy-pages@v4

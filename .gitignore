@@ -26,6 +26,9 @@ dist-ssr
 # Temp files from data pipeline
 .tmp-*
 
+# Generated data (built at deploy time)
+public/data/
+
 # Environment
 .env
 .env.local

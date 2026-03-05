@@ -8,7 +8,7 @@
  * Format: ZIP containing XML
  */
 
-import { writeFileSync, mkdirSync, existsSync, createWriteStream } from 'fs';
+import { writeFileSync, mkdirSync, existsSync, readFileSync, unlinkSync, createWriteStream } from 'fs';
 import { pipeline } from 'stream/promises';
 import { createReadStream } from 'fs';
 import { join, dirname } from 'path';
@@ -20,6 +20,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
 const DATA_DIR = join(ROOT, 'public', 'data');
 const DEPT_DIR = join(DATA_DIR, 'departments');
+const BRANDS_CACHE = join(ROOT, 'brands-cache.json');
 
 const SOURCE_URL = 'https://donnees.roulez-eco.fr/opendata/instantane';
 const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
@@ -295,6 +296,31 @@ function getDepartment(cp) {
   return cp.substring(0, 2);
 }
 
+/**
+ * Loads cached brands from brands-cache.json.
+ * Returns Map<stationId, brand>.
+ */
+function loadBrandsCache() {
+  if (!existsSync(BRANDS_CACHE)) return new Map();
+  try {
+    const obj = JSON.parse(readFileSync(BRANDS_CACHE, 'utf-8'));
+    const map = new Map(Object.entries(obj).map(([k, v]) => [parseInt(k), v]));
+    console.log(`Brands cache loaded: ${map.size} stations.`);
+    return map;
+  } catch {
+    return new Map();
+  }
+}
+
+/**
+ * Saves brand map to brands-cache.json for persistence across CI runs.
+ */
+function saveBrandsCache(brandMap) {
+  const obj = Object.fromEntries(brandMap);
+  writeFileSync(BRANDS_CACHE, JSON.stringify(obj));
+  console.log(`Brands cache saved: ${brandMap.size} stations.`);
+}
+
 function groupByDepartment(stations, brandMap) {
   const groups = {};
   for (const station of stations.values()) {
@@ -328,11 +354,21 @@ async function main() {
   // 3. Parse
   const stations = await parseXML(XML_PATH);
 
-  // 3b. Fetch brands from OSM
-  const brandMap = await fetchOSMBrands();
+  // 3b. Load cached brands, then fetch fresh from OSM
+  const cachedBrands = loadBrandsCache();
+  const osmBrands = await fetchOSMBrands();
+
+  // Merge: OSM brands take priority, cached brands as fallback
+  const mergedBrands = new Map(cachedBrands);
+  for (const [id, brand] of osmBrands) {
+    mergedBrands.set(id, brand);
+  }
+
+  // Save merged brands for next run
+  saveBrandsCache(mergedBrands);
 
   // 4. Group by department
-  const groups = groupByDepartment(stations, brandMap);
+  const groups = groupByDepartment(stations, mergedBrands);
 
   // 5. Write JSON files
   mkdirSync(DEPT_DIR, { recursive: true });
@@ -352,7 +388,6 @@ async function main() {
   console.log(`\nDone! ${totalStations} stations in ${Object.keys(groups).length} departments.`);
 
   // 7. Cleanup temp files
-  const { unlinkSync } = await import('fs');
   try { unlinkSync(ZIP_PATH); } catch {}
   try { unlinkSync(XML_PATH); } catch {}
 }

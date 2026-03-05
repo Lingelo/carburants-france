@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "data": "node scripts/process-data.mjs",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
