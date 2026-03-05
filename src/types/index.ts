@@ -14,6 +14,7 @@ export interface Station {
   addr: string;
   city: string;
   cp: string;
+  brand?: string;
   fuels: Partial<Record<FuelType, FuelPrice>>;
 }
 

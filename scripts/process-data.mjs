@@ -22,6 +22,7 @@ const DATA_DIR = join(ROOT, 'public', 'data');
 const DEPT_DIR = join(DATA_DIR, 'departments');
 
 const SOURCE_URL = 'https://donnees.roulez-eco.fr/opendata/instantane';
+const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
 const ZIP_PATH = join(ROOT, '.tmp-fuel-data.zip');
 const XML_PATH = join(ROOT, '.tmp-fuel-data.xml');
 
@@ -34,6 +35,126 @@ const FUEL_MAP = {
   5: 'E10',
   6: 'SP98',
 };
+
+// Brand normalization (duplicated from src/utils/brands.ts for plain JS usage)
+const BRAND_NORMALIZE = {
+  'Total': 'TotalEnergies',
+  'Total Access': 'TotalEnergies',
+  'TotalEnergies Access': 'TotalEnergies',
+  'total': 'TotalEnergies',
+  'TOTAL': 'TotalEnergies',
+  'TOTALENERGIES': 'TotalEnergies',
+  'TotalEnergies': 'TotalEnergies',
+  'E.Leclerc': 'Leclerc',
+  'Leclerc': 'Leclerc',
+  'E. Leclerc': 'Leclerc',
+  'LECLERC': 'Leclerc',
+  'Carrefour': 'Carrefour',
+  'Carrefour Market': 'Carrefour',
+  'Carrefour Contact': 'Carrefour',
+  'Carrefour Express': 'Carrefour',
+  'CARREFOUR': 'Carrefour',
+  'Intermarché': 'Intermarché',
+  'Intermarche': 'Intermarché',
+  'INTERMARCHE': 'Intermarché',
+  'Intermarché Super': 'Intermarché',
+  'Intermarché Contact': 'Intermarché',
+  'Super U': 'Système U',
+  'Hyper U': 'Système U',
+  'U Express': 'Système U',
+  'Système U': 'Système U',
+  'Systeme U': 'Système U',
+  'BP': 'BP',
+  'bp': 'BP',
+  'Shell': 'Shell',
+  'SHELL': 'Shell',
+  'Esso': 'Esso',
+  'ESSO': 'Esso',
+  'Esso Express': 'Esso',
+  'Auchan': 'Auchan',
+  'AUCHAN': 'Auchan',
+  'Casino': 'Casino',
+  'CASINO': 'Casino',
+  'Géant Casino': 'Casino',
+  'Netto': 'Netto',
+  'NETTO': 'Netto',
+  'Avia': 'Avia',
+  'AVIA': 'Avia',
+  'Dyneff': 'Dyneff',
+  'DYNEFF': 'Dyneff',
+  'Elan': 'Elan',
+  'ELAN': 'Elan',
+  'Vito': 'Vito',
+  'VITO': 'Vito',
+  'Cora': 'Cora',
+  'CORA': 'Cora',
+  'Lidl': 'Lidl',
+  'LIDL': 'Lidl',
+  'Colruyt': 'Colruyt',
+  'COLRUYT': 'Colruyt',
+};
+
+function normalizeBrand(raw) {
+  return BRAND_NORMALIZE[raw] ?? raw;
+}
+
+/**
+ * Fetches fuel station brands from OpenStreetMap via Overpass API.
+ * Uses ref:FR:prix-carburants tag for join with gouv.fr station IDs.
+ * Returns Map<stationId, normalizedBrand>.
+ */
+async function fetchOSMBrands() {
+  const query = `
+    [out:json][timeout:180];
+    (
+      node["amenity"="fuel"]["ref:FR:prix-carburants"](41.0,-5.5,51.5,10.0);
+      way["amenity"="fuel"]["ref:FR:prix-carburants"](41.0,-5.5,51.5,10.0);
+    );
+    out tags;
+  `;
+
+  const maxAttempts = 2;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      console.log(`Fetching OSM brands (attempt ${attempt}/${maxAttempts})...`);
+      const res = await fetch(OVERPASS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `data=${encodeURIComponent(query)}`,
+        signal: AbortSignal.timeout(180_000),
+      });
+
+      if (!res.ok) throw new Error(`Overpass HTTP ${res.status}`);
+
+      const data = await res.json();
+      const brandMap = new Map();
+
+      for (const el of data.elements) {
+        const ref = el.tags?.['ref:FR:prix-carburants'];
+        const rawBrand = el.tags?.brand || el.tags?.operator;
+        if (ref && rawBrand) {
+          const stationId = parseInt(ref, 10);
+          if (!isNaN(stationId)) {
+            brandMap.set(stationId, normalizeBrand(rawBrand));
+          }
+        }
+      }
+
+      console.log(`OSM brands: ${brandMap.size} stations matched.`);
+      return brandMap;
+    } catch (err) {
+      console.warn(`OSM fetch attempt ${attempt} failed: ${err.message}`);
+      if (attempt < maxAttempts) {
+        const delay = attempt * 5000;
+        console.log(`Retrying in ${delay / 1000}s...`);
+        await new Promise(r => setTimeout(r, delay));
+      }
+    }
+  }
+
+  console.warn('OSM brand fetch failed entirely — continuing without brands.');
+  return new Map();
+}
 
 async function downloadFile(url, dest) {
   console.log(`Downloading from ${url}...`);
@@ -174,12 +295,12 @@ function getDepartment(cp) {
   return cp.substring(0, 2);
 }
 
-function groupByDepartment(stations) {
+function groupByDepartment(stations, brandMap) {
   const groups = {};
   for (const station of stations.values()) {
     const dept = getDepartment(station.cp);
     if (!groups[dept]) groups[dept] = [];
-    groups[dept].push({
+    const entry = {
       id: station.id,
       lat: station.lat,
       lng: station.lng,
@@ -187,7 +308,10 @@ function groupByDepartment(stations) {
       city: station.city,
       cp: station.cp,
       fuels: station.fuels,
-    });
+    };
+    const brand = brandMap.get(station.id);
+    if (brand) entry.brand = brand;
+    groups[dept].push(entry);
   }
   return groups;
 }
@@ -204,8 +328,11 @@ async function main() {
   // 3. Parse
   const stations = await parseXML(XML_PATH);
 
+  // 3b. Fetch brands from OSM
+  const brandMap = await fetchOSMBrands();
+
   // 4. Group by department
-  const groups = groupByDepartment(stations);
+  const groups = groupByDepartment(stations, brandMap);
 
   // 5. Write JSON files
   mkdirSync(DEPT_DIR, { recursive: true });

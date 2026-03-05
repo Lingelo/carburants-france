@@ -4,6 +4,7 @@ import L from 'leaflet';
 import 'leaflet.markercluster';
 import type { FuelType, Station } from '../types';
 import { FUEL_COLORS, FUEL_LABELS, getFuelPrice } from '../utils/fuel';
+import { getBrandDisplay } from '../utils/brands';
 
 // Fix default marker icons in bundled environments
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -233,8 +234,19 @@ function renderPopupHTML(
   const destination = encodeURIComponent(`${station.addr}, ${station.cp} ${station.city}`);
   const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${destination}`;
 
+  const brandHTML = station.brand
+    ? (() => {
+        const { abbr, color } = getBrandDisplay(station.brand);
+        return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+          <span style="background:${color};color:white;font-size:10px;font-weight:700;padding:2px 5px;border-radius:4px;line-height:1;">${abbr}</span>
+          <span style="font-size:12px;font-weight:500;color:#6b7280;">${station.brand}</span>
+        </div>`;
+      })()
+    : '';
+
   return `
     <div style="min-width:180px;font-family:Inter,system-ui,sans-serif;">
+      ${brandHTML}
       <div style="font-weight:600;font-size:13px;color:#1f2937;margin-bottom:2px;">${station.addr}</div>
       <div style="font-size:11px;color:#9ca3af;margin-bottom:8px;">${station.city} \u00b7 ${station.cp} \u00b7 ${distStr}</div>
       ${fuels}

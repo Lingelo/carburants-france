@@ -1,6 +1,7 @@
 import type { FuelType, Station } from '../types';
 import { formatDistance } from '../utils/geo';
 import { getFuelPrice, sortByFuelPrice, FUEL_COLORS, formatPrice } from '../utils/fuel';
+import { getBrandDisplay } from '../utils/brands';
 
 interface StationWithDistance extends Station {
   distance: number;
@@ -49,7 +50,19 @@ export function StationPanel({ stations, totalStations, selectedFuel, onStationC
               }`}
             >
               <div className="min-w-0 flex-1">
-                <div className="flex items-baseline gap-1">
+                <div className="flex items-center gap-1">
+                  {station.brand && (() => {
+                    const { abbr, color } = getBrandDisplay(station.brand);
+                    return (
+                      <span
+                        className="shrink-0 rounded px-1 py-px text-[9px] font-bold leading-none text-white"
+                        style={{ backgroundColor: color }}
+                        title={station.brand}
+                      >
+                        {abbr}
+                      </span>
+                    );
+                  })()}
                   <span className="truncate text-xs font-medium text-gray-800">
                     {station.addr}
                   </span>
