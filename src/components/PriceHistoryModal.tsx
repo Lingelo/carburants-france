@@ -352,7 +352,7 @@ export function PriceHistoryModal({ onClose }: { onClose: () => void }) {
       onClick={onClose}
     >
       <div
-        className="glass w-full max-w-2xl rounded-2xl p-5 shadow-2xl"
+        className="w-full max-w-2xl rounded-2xl bg-white p-5 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
