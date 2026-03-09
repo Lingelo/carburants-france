@@ -23,11 +23,15 @@ function computeRealCost(
   distanceKm: number,
   tankSize: number,
   consumption: number,
+  hourlyRate: number,
+  avgSpeed: number,
 ): number {
   const roundTripKm = distanceKm * 2;
   const fuelForTrip = (roundTripKm / 100) * consumption;
   const fillUp = tankSize * 0.8; // assume tank is 20% full
-  return pricePerLiter * (fillUp + fuelForTrip);
+  const fuelCost = pricePerLiter * (fillUp + fuelForTrip);
+  const timeCostEur = (roundTripKm / avgSpeed) * hourlyRate;
+  return fuelCost + timeCostEur;
 }
 
 export function StationPanel({ stations, totalStations, selectedFuel, onStationClick, selectedStationId, priceBounds, onStationHover }: Props) {
@@ -35,6 +39,8 @@ export function StationPanel({ stations, totalStations, selectedFuel, onStationC
   const [showSettings, setShowSettings] = useState(false);
   const [tankSize, setTankSize] = useState(40);
   const [consumption, setConsumption] = useState(7);
+  const [hourlyRate, setHourlyRate] = useState(15);
+  const [avgSpeed, setAvgSpeed] = useState(50);
 
   const { pMin: minPrice, pMax: maxPrice } = priceBounds;
 
@@ -43,8 +49,8 @@ export function StationPanel({ stations, totalStations, selectedFuel, onStationC
 
     if (realCostMode) {
       return [...filtered].sort((a, b) => {
-        const costA = computeRealCost(getFuelPrice(a, selectedFuel)!, a.distance, tankSize, consumption);
-        const costB = computeRealCost(getFuelPrice(b, selectedFuel)!, b.distance, tankSize, consumption);
+        const costA = computeRealCost(getFuelPrice(a, selectedFuel)!, a.distance, tankSize, consumption, hourlyRate, avgSpeed);
+        const costB = computeRealCost(getFuelPrice(b, selectedFuel)!, b.distance, tankSize, consumption, hourlyRate, avgSpeed);
         return costA - costB;
       });
     }
@@ -54,7 +60,7 @@ export function StationPanel({ stations, totalStations, selectedFuel, onStationC
       const pb = getFuelPrice(b, selectedFuel)!;
       return pa - pb;
     });
-  }, [stations, selectedFuel, realCostMode, tankSize, consumption]);
+  }, [stations, selectedFuel, realCostMode, tankSize, consumption, hourlyRate, avgSpeed]);
 
   if (stations.length === 0) {
     return (
@@ -98,37 +104,63 @@ export function StationPanel({ stations, totalStations, selectedFuel, onStationC
         {/* Car settings - collapsible */}
         {showSettings && (
           <div className="mt-2 rounded-lg bg-gray-50 p-2">
-            <div className="flex items-center gap-3">
-              <label className="flex flex-1 items-center gap-1.5">
-                <span className="text-[10px] text-gray-500">Réservoir</span>
+            <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
+              <label className="flex items-center gap-1">
+                <span className="text-[10px] text-gray-500 shrink-0">Réservoir</span>
                 <input
                   type="number"
                   value={tankSize}
                   onChange={(e) => setTankSize(Math.max(1, Number(e.target.value)))}
-                  className="w-12 rounded border border-gray-200 px-1.5 py-0.5 text-center text-[11px] font-medium text-gray-700"
+                  className="w-10 rounded border border-gray-200 px-1 py-0.5 text-center text-[11px] font-medium text-gray-700"
                   min={1}
                   max={120}
                 />
                 <span className="text-[10px] text-gray-400">L</span>
               </label>
-              <label className="flex flex-1 items-center gap-1.5">
-                <span className="text-[10px] text-gray-500">Conso</span>
+              <label className="flex items-center gap-1">
+                <span className="text-[10px] text-gray-500 shrink-0">Conso</span>
                 <input
                   type="number"
                   value={consumption}
                   onChange={(e) => setConsumption(Math.max(0.1, Number(e.target.value)))}
-                  className="w-12 rounded border border-gray-200 px-1.5 py-0.5 text-center text-[11px] font-medium text-gray-700"
+                  className="w-10 rounded border border-gray-200 px-1 py-0.5 text-center text-[11px] font-medium text-gray-700"
                   min={0.1}
                   max={30}
                   step={0.1}
                 />
                 <span className="text-[10px] text-gray-400">L/100</span>
               </label>
+              <label className="flex items-center gap-1">
+                <span className="text-[10px] text-gray-500 shrink-0">Vitesse</span>
+                <input
+                  type="number"
+                  value={avgSpeed}
+                  onChange={(e) => setAvgSpeed(Math.max(10, Number(e.target.value)))}
+                  className="w-10 rounded border border-gray-200 px-1 py-0.5 text-center text-[11px] font-medium text-gray-700"
+                  min={10}
+                  max={130}
+                />
+                <span className="text-[10px] text-gray-400">km/h</span>
+              </label>
+              <label className="flex items-center gap-1">
+                <span className="text-[10px] text-gray-500 shrink-0">Temps</span>
+                <input
+                  type="number"
+                  value={hourlyRate}
+                  onChange={(e) => setHourlyRate(Math.max(0, Number(e.target.value)))}
+                  className="w-10 rounded border border-gray-200 px-1 py-0.5 text-center text-[11px] font-medium text-gray-700"
+                  min={0}
+                  max={100}
+                />
+                <span className="text-[10px] text-gray-400">€/h</span>
+              </label>
+            </div>
+            <div className="mt-1.5 flex justify-end">
               <button
                 onClick={() => { setRealCostMode(false); setShowSettings(false); }}
                 className="rounded px-1.5 py-0.5 text-[10px] text-gray-400 hover:bg-gray-200 hover:text-gray-600"
               >
-                Off
+                Désactiver
               </button>
             </div>
           </div>
@@ -142,7 +174,7 @@ export function StationPanel({ stations, totalStations, selectedFuel, onStationC
           if (price === null) return null;
           const isSelected = station.id === selectedStationId;
           const realCost = realCostMode
-            ? computeRealCost(price, station.distance, tankSize, consumption)
+            ? computeRealCost(price, station.distance, tankSize, consumption, hourlyRate, avgSpeed)
             : null;
 
           return (
