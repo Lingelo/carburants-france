@@ -52,6 +52,13 @@ export function timeAgo(dateStr: string): string {
   return `il y a ${diffD}j`;
 }
 
+export function getPriceColor(price: number, min: number, max: number): string {
+  if (max === min) return '#22c55e'; // all same price → green
+  const t = (price - min) / (max - min); // 0 = cheapest, 1 = most expensive
+  const hue = 120 * (1 - t); // 120=green, 60=yellow, 0=red
+  return `hsl(${hue}, 80%, 45%)`;
+}
+
 export function getCheapestFuel(station: Station): FuelType | null {
   let cheapest: FuelType | null = null;
   let minPrice = Infinity;
