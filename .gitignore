@@ -28,6 +28,7 @@ dist-ssr
 
 # Generated data (built at deploy time)
 public/data/
+!public/data/history.json
 
 # Environment
 .env

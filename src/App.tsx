@@ -12,6 +12,7 @@ import { Header } from './components/Header';
 import { FuelFilter } from './components/FuelFilter';
 import { StationPanel } from './components/StationPanel';
 import { AboutModal } from './components/AboutModal';
+import { PriceHistoryModal } from './components/PriceHistoryModal';
 import { timeAgo, FUEL_LABELS } from './utils/fuel';
 
 const SEARCH_RADIUS_KM = 10;
@@ -31,6 +32,7 @@ export default function App() {
   const [panelOpen, setPanelOpen] = useState(false);
   const [mapBounds, setMapBounds] = useState<LatLngBounds | null>(null);
   const [showAbout, setShowAbout] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const [geolocating, setGeolocating] = useState(false);
   const [geoError, setGeoError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -281,6 +283,13 @@ export default function App() {
           À propos
         </button>
         <span className="text-gray-300">·</span>
+        <button
+          onClick={() => setShowHistory(true)}
+          className="font-medium text-gray-600 hover:text-gray-900 underline decoration-gray-300 underline-offset-2"
+        >
+          Évolution des prix
+        </button>
+        <span className="text-gray-300">·</span>
         <span>Données gouv.fr</span>
         {meta?.lastUpdate && (
           <>
@@ -291,6 +300,7 @@ export default function App() {
       </div>
 
       {showAbout && <AboutModal onClose={() => setShowAbout(false)} lastUpdate={meta?.lastUpdate} />}
+      {showHistory && <PriceHistoryModal onClose={() => setShowHistory(false)} />}
 
       {/* Station panel — uses visibleStations (synced with map viewport) */}
       {selectedCity && (
@@ -322,6 +332,13 @@ export default function App() {
                     className="underline decoration-gray-300 underline-offset-2"
                   >
                     À propos
+                  </span>
+                  <span>·</span>
+                  <span
+                    onClick={(e) => { e.stopPropagation(); setShowHistory(true); }}
+                    className="underline decoration-gray-300 underline-offset-2"
+                  >
+                    Prix
                   </span>
                   {meta?.lastUpdate && (
                     <>
