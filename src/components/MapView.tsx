@@ -33,17 +33,20 @@ interface Props {
   searchCenter: [number, number] | null;
   searchRadius: number;
   priceBounds: { pMin: number; pMax: number };
+  hoveredStationId: number | null;
   onGeolocate?: () => void;
   geolocating?: boolean;
   hasPanel?: boolean;
   panelOpen?: boolean;
 }
 
-function createPriceIcon(price: number, color: string): L.DivIcon {
+function createPriceIcon(price: number, color: string, dimmed = false): L.DivIcon {
   const label = price.toFixed(3).replace('.', ',').slice(0, -1); // "1,72" (2 decimals)
+  const bg = dimmed ? '#d1d5db' : color;
+  const opacity = dimmed ? '0.5' : '1';
   return L.divIcon({
     html: `<div style="
-      background: ${color};
+      background: ${bg};
       color: white;
       font-size: 11px;
       font-weight: 700;
@@ -55,6 +58,8 @@ function createPriceIcon(price: number, color: string): L.DivIcon {
       white-space: nowrap;
       line-height: 1;
       text-align: center;
+      opacity: ${opacity};
+      transition: opacity 0.15s;
     ">${label}</div>`,
     className: '',
     iconSize: [46, 22],
@@ -105,16 +110,20 @@ function MarkerClusterGroup({
   selectedStationId,
   onStationSelect,
   priceBounds,
+  hoveredStationId,
 }: {
   stations: StationWithDistance[];
   selectedFuel: FuelType;
   selectedStationId: number | null;
   onStationSelect: (id: number | null) => void;
   priceBounds: { pMin: number; pMax: number };
+  hoveredStationId: number | null;
 }) {
   const map = useMap();
   const clusterRef = useRef<L.MarkerClusterGroup | null>(null);
   const markersRef = useRef<Map<number, L.Marker>>(new Map());
+  const pricesRef = useRef<Map<number, number>>(new Map());
+  const hoveredRef = useRef<number | null>(hoveredStationId);
 
   const stationData = useMemo(
     () => stations.filter((s) => getFuelPrice(s, selectedFuel) !== null),
@@ -127,6 +136,7 @@ function MarkerClusterGroup({
     }
 
     const newMarkers = new Map<number, L.Marker>();
+    const newPrices = new Map<number, number>();
 
     const { pMin: minPrice, pMax: maxPrice } = priceBounds;
 
@@ -143,10 +153,19 @@ function MarkerClusterGroup({
         const count = c.getChildCount();
         const color = getPriceColor(cheapest, minPrice, maxPrice);
         const label = cheapest.toFixed(3).replace('.', ',').slice(0, -1);
+
+        // Check if this cluster contains the hovered station
+        const hovered = hoveredRef.current;
+        const dimmed = hovered !== null && !childMarkers.some(
+          m => (m.options as Record<string, unknown>).stationId === hovered,
+        );
+        const bg = dimmed ? '#d1d5db' : color;
+        const opacity = dimmed ? '0.5' : '1';
+
         return L.divIcon({
           html: `<div style="
             position: relative;
-            background: ${color};
+            background: ${bg};
             padding: 3px 8px;
             border-radius: 12px;
             border: 2px solid white;
@@ -158,6 +177,8 @@ function MarkerClusterGroup({
             white-space: nowrap;
             line-height: 1;
             text-align: center;
+            opacity: ${opacity};
+            transition: opacity 0.15s, background 0.15s;
           ">${label}<span style="
             position: absolute;
             top: -7px;
@@ -187,7 +208,7 @@ function MarkerClusterGroup({
       const price = getFuelPrice(s, selectedFuel)!;
       const color = getPriceColor(price, minPrice, maxPrice);
       const icon = createPriceIcon(price, color);
-      const marker = L.marker([s.lat, s.lng], { icon, fuelPrice: price } as L.MarkerOptions);
+      const marker = L.marker([s.lat, s.lng], { icon, fuelPrice: price, stationId: s.id } as L.MarkerOptions);
 
       const popupContent = document.createElement('div');
       popupContent.innerHTML = renderPopupHTML(s, selectedFuel);
@@ -198,10 +219,12 @@ function MarkerClusterGroup({
       });
 
       newMarkers.set(s.id, marker);
+      newPrices.set(s.id, price);
       cluster.addLayer(marker);
     }
 
     markersRef.current = newMarkers;
+    pricesRef.current = newPrices;
     clusterRef.current = cluster;
     map.addLayer(cluster);
 
@@ -224,6 +247,28 @@ function MarkerClusterGroup({
       }
     }
   }, [selectedStationId]);
+
+  // Dim non-hovered markers and clusters when a station is hovered from the panel
+  useEffect(() => {
+    hoveredRef.current = hoveredStationId;
+    const { pMin: minPrice, pMax: maxPrice } = priceBounds;
+    for (const [id, marker] of markersRef.current) {
+      const price = pricesRef.current.get(id);
+      if (price == null) continue;
+      if (hoveredStationId === null) {
+        const color = getPriceColor(price, minPrice, maxPrice);
+        marker.setIcon(createPriceIcon(price, color));
+      } else {
+        const dimmed = id !== hoveredStationId;
+        const color = getPriceColor(price, minPrice, maxPrice);
+        marker.setIcon(createPriceIcon(price, color, dimmed));
+      }
+    }
+    // Refresh cluster icons so they also reflect the hover state
+    if (clusterRef.current) {
+      clusterRef.current.refreshClusters();
+    }
+  }, [hoveredStationId, priceBounds]);
 
   return null;
 }
@@ -394,6 +439,7 @@ export function MapView({
   searchCenter,
   searchRadius,
   priceBounds,
+  hoveredStationId,
   onGeolocate,
   geolocating,
   hasPanel,
@@ -426,6 +472,7 @@ export function MapView({
           selectedStationId={selectedStationId}
           onStationSelect={onStationSelect}
           priceBounds={priceBounds}
+          hoveredStationId={hoveredStationId}
         />
       </MapContainer>
 
