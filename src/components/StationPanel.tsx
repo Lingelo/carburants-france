@@ -1,6 +1,6 @@
 import type { FuelType, Station } from '../types';
 import { formatDistance } from '../utils/geo';
-import { getFuelPrice, sortByFuelPrice, FUEL_COLORS, formatPrice } from '../utils/fuel';
+import { getFuelPrice, sortByFuelPrice, formatPrice, getPriceColor } from '../utils/fuel';
 import { getBrandDisplay } from '../utils/brands';
 
 interface StationWithDistance extends Station {
@@ -18,6 +18,9 @@ interface Props {
 export function StationPanel({ stations, totalStations, selectedFuel, onStationClick, selectedStationId }: Props) {
   const sorted = sortByFuelPrice(stations, selectedFuel) as StationWithDistance[];
   const withFuel = sorted.filter((s) => getFuelPrice(s, selectedFuel) !== null);
+  const fuelPrices = withFuel.map(s => getFuelPrice(s, selectedFuel)!);
+  const minPrice = Math.min(...fuelPrices);
+  const maxPrice = Math.max(...fuelPrices);
 
   if (stations.length === 0) {
     return (
@@ -75,7 +78,7 @@ export function StationPanel({ stations, totalStations, selectedFuel, onStationC
               {price !== null && (
                 <span
                   className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold text-white"
-                  style={{ backgroundColor: FUEL_COLORS[selectedFuel] }}
+                  style={{ backgroundColor: getPriceColor(price, minPrice, maxPrice) }}
                 >
                   {formatPrice(price)}
                 </span>

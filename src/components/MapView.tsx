@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet.markercluster';
 import type { FuelType, Station } from '../types';
-import { FUEL_COLORS, FUEL_LABELS, getFuelPrice } from '../utils/fuel';
+import { FUEL_COLORS, FUEL_LABELS, getFuelPrice, getPriceColor } from '../utils/fuel';
 import { getBrandDisplay } from '../utils/brands';
 
 // Fix default marker icons in bundled environments
@@ -38,8 +38,7 @@ interface Props {
   panelOpen?: boolean;
 }
 
-function createPriceIcon(fuel: FuelType, price: number): L.DivIcon {
-  const color = FUEL_COLORS[fuel];
+function createPriceIcon(price: number, color: string): L.DivIcon {
   const label = price.toFixed(3).replace('.', ',').slice(0, -1); // "1,72" (2 decimals)
   return L.divIcon({
     html: `<div style="
@@ -124,7 +123,12 @@ function MarkerClusterGroup({
       map.removeLayer(clusterRef.current);
     }
 
-    const fuelColor = FUEL_COLORS[selectedFuel];
+    const newMarkers = new Map<number, L.Marker>();
+
+    const prices = stationData.map(s => getFuelPrice(s, selectedFuel)!);
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+
     const cluster = L.markerClusterGroup({
       chunkedLoading: true,
       maxClusterRadius: 50,
@@ -132,37 +136,57 @@ function MarkerClusterGroup({
       showCoverageOnHover: false,
       disableClusteringAtZoom: 16,
       iconCreateFunction(c) {
+        const childMarkers = c.getAllChildMarkers();
+        const clusterPrices = childMarkers.map(m => (m.options as Record<string, unknown>).fuelPrice as number);
+        const cheapest = Math.min(...clusterPrices);
         const count = c.getChildCount();
-        const size = count < 10 ? 36 : count < 30 ? 42 : 50;
+        const color = getPriceColor(cheapest, minPrice, maxPrice);
+        const label = cheapest.toFixed(3).replace('.', ',').slice(0, -1);
         return L.divIcon({
           html: `<div style="
-            background: ${fuelColor};
-            width: ${size}px;
-            height: ${size}px;
-            border-radius: 50%;
-            border: 3px solid white;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            position: relative;
+            background: ${color};
+            padding: 3px 8px;
+            border-radius: 12px;
+            border: 2px solid white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+            color: white;
+            font-weight: 700;
+            font-size: 11px;
+            font-family: system-ui, -apple-system, sans-serif;
+            white-space: nowrap;
+            line-height: 1;
+            text-align: center;
+          ">${label}<span style="
+            position: absolute;
+            top: -7px;
+            right: -7px;
+            background: #374151;
+            color: white;
+            font-size: 9px;
+            font-weight: 700;
+            min-width: 16px;
+            height: 16px;
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
-            font-weight: 700;
-            font-size: ${size < 42 ? 13 : 14}px;
-            font-family: system-ui, sans-serif;
-          ">${count}</div>`,
+            padding: 0 3px;
+            border: 1.5px solid white;
+            line-height: 1;
+          ">${count}</span></div>`,
           className: '',
-          iconSize: [size, size],
-          iconAnchor: [size / 2, size / 2],
+          iconSize: [52, 24],
+          iconAnchor: [26, 12],
         });
       },
     });
 
-    const newMarkers = new Map<number, L.Marker>();
-
     for (const s of stationData) {
       const price = getFuelPrice(s, selectedFuel)!;
-      const icon = createPriceIcon(selectedFuel, price);
-      const marker = L.marker([s.lat, s.lng], { icon });
+      const color = getPriceColor(price, minPrice, maxPrice);
+      const icon = createPriceIcon(price, color);
+      const marker = L.marker([s.lat, s.lng], { icon, fuelPrice: price } as L.MarkerOptions);
 
       const popupContent = document.createElement('div');
       popupContent.innerHTML = renderPopupHTML(s, selectedFuel);
