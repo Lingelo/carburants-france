@@ -32,6 +32,7 @@ interface Props {
   onVisibleBoundsChange: (bounds: L.LatLngBounds) => void;
   searchCenter: [number, number] | null;
   searchRadius: number;
+  priceBounds: { pMin: number; pMax: number };
   onGeolocate?: () => void;
   geolocating?: boolean;
   hasPanel?: boolean;
@@ -103,11 +104,13 @@ function MarkerClusterGroup({
   selectedFuel,
   selectedStationId,
   onStationSelect,
+  priceBounds,
 }: {
   stations: StationWithDistance[];
   selectedFuel: FuelType;
   selectedStationId: number | null;
   onStationSelect: (id: number | null) => void;
+  priceBounds: { pMin: number; pMax: number };
 }) {
   const map = useMap();
   const clusterRef = useRef<L.MarkerClusterGroup | null>(null);
@@ -125,9 +128,7 @@ function MarkerClusterGroup({
 
     const newMarkers = new Map<number, L.Marker>();
 
-    const prices = stationData.map(s => getFuelPrice(s, selectedFuel)!);
-    const minPrice = Math.min(...prices);
-    const maxPrice = Math.max(...prices);
+    const { pMin: minPrice, pMax: maxPrice } = priceBounds;
 
     const cluster = L.markerClusterGroup({
       chunkedLoading: true,
@@ -209,7 +210,7 @@ function MarkerClusterGroup({
         map.removeLayer(clusterRef.current);
       }
     };
-  }, [map, stationData, selectedFuel, onStationSelect]);
+  }, [map, stationData, selectedFuel, onStationSelect, priceBounds]);
 
   // Open popup when station selected from panel
   useEffect(() => {
@@ -392,6 +393,7 @@ export function MapView({
   onVisibleBoundsChange,
   searchCenter,
   searchRadius,
+  priceBounds,
   onGeolocate,
   geolocating,
   hasPanel,
@@ -423,6 +425,7 @@ export function MapView({
           selectedFuel={selectedFuel}
           selectedStationId={selectedStationId}
           onStationSelect={onStationSelect}
+          priceBounds={priceBounds}
         />
       </MapContainer>
 

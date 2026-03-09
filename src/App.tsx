@@ -13,7 +13,7 @@ import { FuelFilter } from './components/FuelFilter';
 import { StationPanel } from './components/StationPanel';
 import { AboutModal } from './components/AboutModal';
 import { PriceHistoryModal } from './components/PriceHistoryModal';
-import { timeAgo, FUEL_LABELS } from './utils/fuel';
+import { timeAgo, FUEL_LABELS, getFuelPrice, getPriceBounds } from './utils/fuel';
 
 const SEARCH_RADIUS_KM = 10;
 
@@ -48,6 +48,15 @@ export default function App() {
     if (!mapBounds) return nearbyStations;
     return nearbyStations.filter((s) => mapBounds.contains([s.lat, s.lng]));
   }, [nearbyStations, mapBounds]);
+
+  // Compute price bounds once from all nearby stations for consistent coloring
+  const priceBounds = useMemo(() => {
+    const prices = nearbyStations
+      .map(s => getFuelPrice(s, selectedFuel))
+      .filter((p): p is number => p !== null);
+    if (prices.length === 0) return { pMin: 0, pMax: 0 };
+    return getPriceBounds(prices);
+  }, [nearbyStations, selectedFuel]);
 
   const handleCitySelect = useCallback(
     async (city: CityResult) => {
@@ -170,6 +179,7 @@ export default function App() {
         onVisibleBoundsChange={handleBoundsChange}
         searchCenter={selectedCity ? [selectedCity.lat, selectedCity.lng] : null}
         searchRadius={SEARCH_RADIUS_KM}
+        priceBounds={priceBounds}
         onGeolocate={handleGeolocate}
         geolocating={geolocating}
         hasPanel={!!selectedCity}
@@ -313,6 +323,7 @@ export default function App() {
               selectedFuel={selectedFuel}
               onStationClick={handleStationClick}
               selectedStationId={selectedStationId}
+              priceBounds={priceBounds}
             />
           </div>
 
@@ -365,6 +376,7 @@ export default function App() {
                   selectedFuel={selectedFuel}
                   onStationClick={handleStationClick}
                   selectedStationId={selectedStationId}
+                  priceBounds={priceBounds}
                 />
               </div>
             )}

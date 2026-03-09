@@ -52,11 +52,42 @@ export function timeAgo(dateStr: string): string {
   return `il y a ${diffD}j`;
 }
 
-export function getPriceColor(price: number, min: number, max: number): string {
-  if (max === min) return '#22c55e'; // all same price → green
-  const t = (price - min) / (max - min); // 0 = cheapest, 1 = most expensive
-  const hue = 120 * (1 - t); // 120=green, 60=yellow, 0=red
-  return `hsl(${hue}, 80%, 45%)`;
+export function getPriceBounds(prices: number[]): { pMin: number; pMax: number } {
+  const sorted = [...prices].sort((a, b) => a - b);
+  const pMin = sorted[Math.floor(sorted.length * 0.01)] ?? sorted[0];
+  const pMax = sorted[Math.ceil(sorted.length * 0.99) - 1] ?? sorted[sorted.length - 1];
+  return { pMin, pMax };
+}
+
+// Color stops evenly spaced for maximum distinguishability
+const PRICE_COLOR_STOPS: [number, number, number, number][] = [
+  // [position, hue, saturation, lightness]
+  [0.0, 142, 71, 40],    // dark green (cheapest)
+  [0.12, 120, 65, 42],   // green
+  [0.25, 90, 70, 44],    // yellow-green
+  [0.38, 65, 80, 46],    // lime
+  [0.50, 48, 90, 48],    // yellow
+  [0.62, 35, 90, 48],    // amber
+  [0.75, 20, 85, 48],    // orange
+  [0.88, 5, 75, 45],     // red
+  [1.0, 0, 80, 30],      // dark red (most expensive)
+];
+
+export function getPriceColor(price: number, pMin: number, pMax: number): string {
+  if (pMax === pMin) return 'hsl(142, 71%, 45%)';
+  const t = Math.max(0, Math.min(1, (price - pMin) / (pMax - pMin)));
+
+  // Find the two stops to interpolate between
+  let i = 0;
+  while (i < PRICE_COLOR_STOPS.length - 2 && PRICE_COLOR_STOPS[i + 1][0] < t) i++;
+  const [pos0, h0, s0, l0] = PRICE_COLOR_STOPS[i];
+  const [pos1, h1, s1, l1] = PRICE_COLOR_STOPS[i + 1];
+  const local = (t - pos0) / (pos1 - pos0);
+
+  const h = h0 + (h1 - h0) * local;
+  const s = s0 + (s1 - s0) * local;
+  const l = l0 + (l1 - l0) * local;
+  return `hsl(${Math.round(h)}, ${Math.round(s)}%, ${Math.round(l)}%)`;
 }
 
 export function getCheapestFuel(station: Station): FuelType | null {

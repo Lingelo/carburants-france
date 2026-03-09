@@ -13,14 +13,13 @@ interface Props {
   selectedFuel: FuelType;
   onStationClick: (station: StationWithDistance) => void;
   selectedStationId: number | null;
+  priceBounds: { pMin: number; pMax: number };
 }
 
-export function StationPanel({ stations, totalStations, selectedFuel, onStationClick, selectedStationId }: Props) {
+export function StationPanel({ stations, totalStations, selectedFuel, onStationClick, selectedStationId, priceBounds }: Props) {
   const sorted = sortByFuelPrice(stations, selectedFuel) as StationWithDistance[];
   const withFuel = sorted.filter((s) => getFuelPrice(s, selectedFuel) !== null);
-  const fuelPrices = withFuel.map(s => getFuelPrice(s, selectedFuel)!);
-  const minPrice = Math.min(...fuelPrices);
-  const maxPrice = Math.max(...fuelPrices);
+  const { pMin: minPrice, pMax: maxPrice } = priceBounds;
 
   if (stations.length === 0) {
     return (
