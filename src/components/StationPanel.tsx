@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import type { FuelType, Station } from '../types';
 import { formatDistance } from '../utils/geo';
 import { getFuelPrice, formatPrice, getPriceColor } from '../utils/fuel';
@@ -6,6 +6,72 @@ import { getBrandDisplay } from '../utils/brands';
 
 interface StationWithDistance extends Station {
   distance: number;
+}
+
+interface Vehicle {
+  brand: string;
+  model: string;
+  description: string;
+  fuel: 'Essence' | 'Gazole' | 'GPLc';
+  hybrid: boolean;
+  tank: number;
+  consoUrban: number;
+  consoMixed: number;
+}
+
+const FUEL_TO_VEHICLE_FUEL: Record<FuelType, 'Essence' | 'Gazole' | 'GPLc'> = {
+  Gazole: 'Gazole',
+  SP95: 'Essence',
+  SP98: 'Essence',
+  E10: 'Essence',
+  E85: 'Essence',
+  GPLc: 'GPLc',
+};
+
+let vehiclesCache: Vehicle[] | null = null;
+
+async function loadVehicles(): Promise<Vehicle[]> {
+  if (vehiclesCache) return vehiclesCache;
+  const res = await fetch(`${import.meta.env.BASE_URL}data/vehicles.json`);
+  vehiclesCache = await res.json();
+  return vehiclesCache!;
+}
+
+function useVehicleSearch(selectedFuel: FuelType) {
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [search, setSearch] = useState('');
+  const [results, setResults] = useState<Vehicle[]>([]);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    loadVehicles().then(setVehicles);
+  }, []);
+
+  const vehicleFuel = FUEL_TO_VEHICLE_FUEL[selectedFuel];
+
+  const updateSearch = useCallback(
+    (q: string) => {
+      setSearch(q);
+      if (q.length < 2) {
+        setResults([]);
+        setOpen(false);
+        return;
+      }
+      const terms = q.toLowerCase().split(/\s+/);
+      const matched = vehicles
+        .filter((v) => v.fuel === vehicleFuel)
+        .filter((v) => {
+          const hay = `${v.brand} ${v.model} ${v.description}`.toLowerCase();
+          return terms.every((t) => hay.includes(t));
+        })
+        .slice(0, 8);
+      setResults(matched);
+      setOpen(matched.length > 0);
+    },
+    [vehicles, vehicleFuel],
+  );
+
+  return { search, setSearch, updateSearch, results, open, setOpen };
 }
 
 interface Props {
@@ -41,6 +107,57 @@ export function StationPanel({ stations, totalStations, selectedFuel, onStationC
   const [consumption, setConsumption] = useState(7);
   const [hourlyRate, setHourlyRate] = useState(15);
   const [avgSpeed, setAvgSpeed] = useState(50);
+  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
+
+  const vehicleSearch = useVehicleSearch(selectedFuel);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on outside click
+  const closeDropdown = vehicleSearch.setOpen;
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        closeDropdown(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [closeDropdown]);
+
+  const handleVehicleSelect = (v: Vehicle) => {
+    setSelectedVehicle(v);
+    setConsumption(v.consoUrban);
+    setTankSize(v.tank);
+    vehicleSearch.setSearch(`${v.brand} ${v.model}`);
+    vehicleSearch.setOpen(false);
+  };
+
+  // When fuel changes, try to find the same model for the new fuel type
+  const vehicleFuel = FUEL_TO_VEHICLE_FUEL[selectedFuel];
+  const prevFuelRef = useRef(vehicleFuel);
+  useEffect(() => {
+    if (prevFuelRef.current === vehicleFuel) return;
+    prevFuelRef.current = vehicleFuel;
+    if (!selectedVehicle) return;
+
+    loadVehicles().then((all) => {
+      const match = all.find(
+        (v) =>
+          v.brand === selectedVehicle.brand &&
+          v.model === selectedVehicle.model &&
+          v.fuel === vehicleFuel,
+      );
+      if (match) {
+        setSelectedVehicle(match);
+        setConsumption(match.consoUrban);
+        setTankSize(match.tank);
+        vehicleSearch.setSearch(`${match.brand} ${match.model}`);
+      } else {
+        setSelectedVehicle(null);
+        vehicleSearch.setSearch('');
+      }
+    });
+  }, [vehicleFuel, selectedVehicle, vehicleSearch]);
 
   const { pMin: minPrice, pMax: maxPrice } = priceBounds;
 
@@ -104,13 +221,49 @@ export function StationPanel({ stations, totalStations, selectedFuel, onStationC
         {/* Car settings - collapsible */}
         {showSettings && (
           <div className="mt-2 rounded-lg bg-gray-50 p-2">
+            {/* Vehicle search */}
+            <div className="relative mb-2" ref={dropdownRef}>
+              <input
+                type="text"
+                value={vehicleSearch.search}
+                onChange={(e) => vehicleSearch.updateSearch(e.target.value)}
+                onFocus={() => { if (vehicleSearch.search.length >= 2) vehicleSearch.updateSearch(vehicleSearch.search); }}
+                placeholder="Rechercher un véhicule..."
+                className="w-full rounded border border-gray-200 px-2 py-1 text-[11px] text-gray-700 placeholder:text-gray-400"
+              />
+              {selectedVehicle && (
+                <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[9px] text-gray-400">
+                  {selectedVehicle.consoUrban} L/100
+                </span>
+              )}
+              {vehicleSearch.open && (
+                <div className="absolute left-0 right-0 top-full z-20 mt-0.5 max-h-40 overflow-y-auto rounded border border-gray-200 bg-white shadow-lg">
+                  {vehicleSearch.results.map((v, i) => (
+                    <button
+                      key={`${v.brand}-${v.model}-${i}`}
+                      onClick={() => handleVehicleSelect(v)}
+                      className="flex w-full flex-col px-2 py-1 text-left hover:bg-blue-50"
+                    >
+                      <span className="text-[11px] font-medium text-gray-700">
+                        {v.brand} {v.model}
+                      </span>
+                      <span className="text-[9px] text-gray-400">
+                        {v.description} · {v.consoUrban} L/100 · {v.tank}L
+                        {v.hybrid ? ' · Hybride' : ''}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
               <label className="flex items-center gap-1">
                 <span className="text-[10px] text-gray-500 shrink-0">Réservoir</span>
                 <input
                   type="number"
                   value={tankSize}
-                  onChange={(e) => setTankSize(Math.max(1, Number(e.target.value)))}
+                  onChange={(e) => { setTankSize(Math.max(1, Number(e.target.value))); setSelectedVehicle(null); }}
                   className="w-10 rounded border border-gray-200 px-1 py-0.5 text-center text-[11px] font-medium text-gray-700"
                   min={1}
                   max={120}
@@ -122,7 +275,7 @@ export function StationPanel({ stations, totalStations, selectedFuel, onStationC
                 <input
                   type="number"
                   value={consumption}
-                  onChange={(e) => setConsumption(Math.max(0.1, Number(e.target.value)))}
+                  onChange={(e) => { setConsumption(Math.max(0.1, Number(e.target.value))); setSelectedVehicle(null); }}
                   className="w-10 rounded border border-gray-200 px-1 py-0.5 text-center text-[11px] font-medium text-gray-700"
                   min={0.1}
                   max={30}
