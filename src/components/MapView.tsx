@@ -29,6 +29,7 @@ interface Props {
   selectedFuel: FuelType;
   selectedStationId: number | null;
   onStationSelect: (id: number | null) => void;
+  onStationDetail?: (station: StationWithDistance) => void;
   onVisibleBoundsChange: (bounds: L.LatLngBounds) => void;
   searchCenter: [number, number] | null;
   searchRadius: number;
@@ -109,6 +110,7 @@ function MarkerClusterGroup({
   selectedFuel,
   selectedStationId,
   onStationSelect,
+  onStationDetail,
   priceBounds,
   hoveredStationId,
 }: {
@@ -116,6 +118,7 @@ function MarkerClusterGroup({
   selectedFuel: FuelType;
   selectedStationId: number | null;
   onStationSelect: (id: number | null) => void;
+  onStationDetail?: (station: StationWithDistance) => void;
   priceBounds: { pMin: number; pMax: number };
   hoveredStationId: number | null;
 }) {
@@ -211,8 +214,21 @@ function MarkerClusterGroup({
       const marker = L.marker([s.lat, s.lng], { icon, fuelPrice: price, stationId: s.id } as L.MarkerOptions);
 
       const popupContent = document.createElement('div');
-      popupContent.innerHTML = renderPopupHTML(s, selectedFuel);
+      popupContent.innerHTML = renderPopupHTML(s, selectedFuel, !!onStationDetail);
       marker.bindPopup(popupContent, { maxWidth: 280 });
+
+      // Wire up "Voir détails" button in popup
+      if (onStationDetail) {
+        marker.on('popupopen', () => {
+          const detailBtn = popupContent.querySelector('[data-detail-btn]');
+          if (detailBtn) {
+            detailBtn.addEventListener('click', (e) => {
+              e.preventDefault();
+              onStationDetail(s);
+            });
+          }
+        });
+      }
 
       marker.on('click', () => {
         onStationSelect(s.id);
@@ -233,7 +249,7 @@ function MarkerClusterGroup({
         map.removeLayer(clusterRef.current);
       }
     };
-  }, [map, stationData, selectedFuel, onStationSelect, priceBounds]);
+  }, [map, stationData, selectedFuel, onStationSelect, onStationDetail, priceBounds]);
 
   // Open popup when station selected from panel
   useEffect(() => {
@@ -276,6 +292,7 @@ function MarkerClusterGroup({
 function renderPopupHTML(
   station: StationWithDistance,
   selectedFuel: FuelType,
+  showDetailBtn = false,
 ): string {
   const fuels = Object.entries(station.fuels)
     .sort(([a], [b]) => {
@@ -329,6 +346,16 @@ function renderPopupHTML(
       })()
     : '';
 
+  const detailBtnHTML = showDetailBtn
+    ? `<button data-detail-btn style="display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-top:6px;padding:7px 0;background:#f3f4f6;color:#374151;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M12 16v-4M12 8h.01"></path>
+        </svg>
+        Voir d\u00e9tails
+      </button>`
+    : '';
+
   return `
     <div style="min-width:180px;font-family:Inter,system-ui,sans-serif;">
       ${brandHTML}
@@ -342,6 +369,7 @@ function renderPopupHTML(
         </svg>
         Itin\u00e9raire
       </a>
+      ${detailBtnHTML}
     </div>
   `;
 }
@@ -435,6 +463,7 @@ export function MapView({
   selectedFuel,
   selectedStationId,
   onStationSelect,
+  onStationDetail,
   onVisibleBoundsChange,
   searchCenter,
   searchRadius,
@@ -471,6 +500,7 @@ export function MapView({
           selectedFuel={selectedFuel}
           selectedStationId={selectedStationId}
           onStationSelect={onStationSelect}
+          onStationDetail={onStationDetail}
           priceBounds={priceBounds}
           hoveredStationId={hoveredStationId}
         />

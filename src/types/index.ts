@@ -29,3 +29,6 @@ export interface CityResult {
 export interface MetaData {
   lastUpdate: string;
 }
+
+/** Per-station price history: stationId → fuel → [epoch, price][] */
+export type StationHistoryData = Record<string, Record<string, [number, number][]>>;
