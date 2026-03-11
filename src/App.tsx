@@ -13,7 +13,6 @@ import { FuelFilter } from './components/FuelFilter';
 import { StationPanel } from './components/StationPanel';
 import { AboutModal } from './components/AboutModal';
 import { PriceHistoryModal } from './components/PriceHistoryModal';
-import { StationDetailModal } from './components/StationDetailModal';
 import { useStationHistory } from './hooks/useStationHistory';
 import { timeAgo, FUEL_LABELS, getFuelPrice, getPriceBounds } from './utils/fuel';
 
@@ -39,7 +38,6 @@ export default function App() {
   const [geolocating, setGeolocating] = useState(false);
   const [geoError, setGeoError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
-  const [detailStation, setDetailStation] = useState<StationWithDistance | null>(null);
   const prevFuelRef = useRef<FuelType>(selectedFuel);
   const { getStationHistory } = useStationHistory();
 
@@ -81,10 +79,6 @@ export default function App() {
 
   const handleStationClick = useCallback((station: StationWithDistance) => {
     setSelectedStationId(station.id);
-  }, []);
-
-  const handleStationDetail = useCallback((station: StationWithDistance) => {
-    setDetailStation(station);
   }, []);
 
   const handleClear = useCallback(() => {
@@ -185,7 +179,7 @@ export default function App() {
         selectedFuel={selectedFuel}
         selectedStationId={selectedStationId}
         onStationSelect={setSelectedStationId}
-        onStationDetail={handleStationDetail}
+        getStationHistory={getStationHistory}
         onVisibleBoundsChange={handleBoundsChange}
         searchCenter={selectedCity ? [selectedCity.lat, selectedCity.lng] : null}
         searchRadius={SEARCH_RADIUS_KM}
@@ -322,14 +316,6 @@ export default function App() {
 
       {showAbout && <AboutModal onClose={() => setShowAbout(false)} lastUpdate={meta?.lastUpdate} />}
       {showHistory && <PriceHistoryModal onClose={() => setShowHistory(false)} />}
-      {detailStation && (
-        <StationDetailModal
-          station={detailStation}
-          selectedFuel={selectedFuel}
-          onClose={() => setDetailStation(null)}
-          getStationHistory={getStationHistory}
-        />
-      )}
 
       {/* Station panel — uses visibleStations (synced with map viewport) */}
       {selectedCity && (
