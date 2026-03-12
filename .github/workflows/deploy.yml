@@ -33,6 +33,9 @@ jobs:
       - name: Generate fuel data
         run: node scripts/process-data.mjs
 
+      - name: Generate price history
+        run: node scripts/generate-history.mjs --bootstrap
+
       - name: Build
         run: npm run build
 

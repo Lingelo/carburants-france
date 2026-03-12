@@ -305,7 +305,7 @@ function computeVariationHTML(
   if (!fuelHistory || fuelHistory.length < 2) return null;
 
   const [firstEpoch, firstPrice] = fuelHistory[0];
-  const [prevEpoch, prevPrice] = fuelHistory[fuelHistory.length - 2];
+  const [prevEpoch, prevPrice] = fuelHistory[fuelHistory.length - 1];
 
   function formatVar(change: number, refLabel: string): string {
     const absChange = Math.abs(change);
