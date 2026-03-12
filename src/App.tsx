@@ -29,6 +29,7 @@ export default function App() {
   const [selectedFuel, setSelectedFuel] = useState<FuelType>('Gazole');
   const [selectedCity, setSelectedCity] = useState<CityResult | null>(null);
   const [selectedStationId, setSelectedStationId] = useState<number | null>(null);
+  const [hoveredStationId, setHoveredStationId] = useState<number | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
   const [mapBounds, setMapBounds] = useState<LatLngBounds | null>(null);
   const [showAbout, setShowAbout] = useState(false);
@@ -180,6 +181,7 @@ export default function App() {
         searchCenter={selectedCity ? [selectedCity.lat, selectedCity.lng] : null}
         searchRadius={SEARCH_RADIUS_KM}
         priceBounds={priceBounds}
+        hoveredStationId={hoveredStationId}
         onGeolocate={handleGeolocate}
         geolocating={geolocating}
         hasPanel={!!selectedCity}
@@ -324,6 +326,7 @@ export default function App() {
               onStationClick={handleStationClick}
               selectedStationId={selectedStationId}
               priceBounds={priceBounds}
+              onStationHover={setHoveredStationId}
             />
           </div>
 
@@ -377,6 +380,7 @@ export default function App() {
                   onStationClick={handleStationClick}
                   selectedStationId={selectedStationId}
                   priceBounds={priceBounds}
+                  onStationHover={setHoveredStationId}
                 />
               </div>
             )}
