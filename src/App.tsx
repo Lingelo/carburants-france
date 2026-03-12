@@ -13,6 +13,7 @@ import { FuelFilter } from './components/FuelFilter';
 import { StationPanel } from './components/StationPanel';
 import { AboutModal } from './components/AboutModal';
 import { PriceHistoryModal } from './components/PriceHistoryModal';
+import { useStationHistory } from './hooks/useStationHistory';
 import { timeAgo, FUEL_LABELS, getFuelPrice, getPriceBounds } from './utils/fuel';
 
 const SEARCH_RADIUS_KM = 10;
@@ -38,6 +39,7 @@ export default function App() {
   const [geoError, setGeoError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const prevFuelRef = useRef<FuelType>(selectedFuel);
+  const { getStationHistory } = useStationHistory();
 
   const nearbyStations: StationWithDistance[] = useMemo(() => {
     if (!selectedCity) return [];
@@ -177,6 +179,7 @@ export default function App() {
         selectedFuel={selectedFuel}
         selectedStationId={selectedStationId}
         onStationSelect={setSelectedStationId}
+        getStationHistory={getStationHistory}
         onVisibleBoundsChange={handleBoundsChange}
         searchCenter={selectedCity ? [selectedCity.lat, selectedCity.lng] : null}
         searchRadius={SEARCH_RADIUS_KM}

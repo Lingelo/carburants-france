@@ -21,6 +21,11 @@ interface StationWithDistance extends Station {
   distance: number;
 }
 
+type GetStationHistoryFn = (
+  stationId: number,
+  postalCode: string,
+) => Promise<Record<string, [number, number][]> | null>;
+
 interface Props {
   center: [number, number];
   zoom: number;
@@ -29,6 +34,7 @@ interface Props {
   selectedFuel: FuelType;
   selectedStationId: number | null;
   onStationSelect: (id: number | null) => void;
+  getStationHistory?: GetStationHistoryFn;
   onVisibleBoundsChange: (bounds: L.LatLngBounds) => void;
   searchCenter: [number, number] | null;
   searchRadius: number;
@@ -109,6 +115,7 @@ function MarkerClusterGroup({
   selectedFuel,
   selectedStationId,
   onStationSelect,
+  getStationHistory,
   priceBounds,
   hoveredStationId,
 }: {
@@ -116,6 +123,7 @@ function MarkerClusterGroup({
   selectedFuel: FuelType;
   selectedStationId: number | null;
   onStationSelect: (id: number | null) => void;
+  getStationHistory?: GetStationHistoryFn;
   priceBounds: { pMin: number; pMax: number };
   hoveredStationId: number | null;
 }) {
@@ -214,6 +222,19 @@ function MarkerClusterGroup({
       popupContent.innerHTML = renderPopupHTML(s, selectedFuel);
       marker.bindPopup(popupContent, { maxWidth: 280 });
 
+      // Lazy-load evolution indicators on popup open
+      if (getStationHistory) {
+        let historyLoaded = false;
+        marker.on('popupopen', async () => {
+          if (historyLoaded) return;
+          historyLoaded = true;
+          const history = await getStationHistory(s.id, s.cp);
+          injectVariationIndicators(popupContent, s, history);
+          // Update popup size after content change
+          marker.getPopup()?.update();
+        });
+      }
+
       marker.on('click', () => {
         onStationSelect(s.id);
       });
@@ -233,7 +254,7 @@ function MarkerClusterGroup({
         map.removeLayer(clusterRef.current);
       }
     };
-  }, [map, stationData, selectedFuel, onStationSelect, priceBounds]);
+  }, [map, stationData, selectedFuel, onStationSelect, getStationHistory, priceBounds]);
 
   // Open popup when station selected from panel
   useEffect(() => {
@@ -273,6 +294,72 @@ function MarkerClusterGroup({
   return null;
 }
 
+/**
+ * Compute variation indicator HTML for a single fuel.
+ * Returns { recent, yearly } HTML strings, or null if no data.
+ */
+function computeVariationHTML(
+  currentPrice: number,
+  fuelHistory: [number, number][] | undefined,
+): { recent: string; yearly: string } | null {
+  if (!fuelHistory || fuelHistory.length < 2) return null;
+
+  const [firstEpoch, firstPrice] = fuelHistory[0];
+  const [prevEpoch, prevPrice] = fuelHistory[fuelHistory.length - 1];
+
+  function formatVar(change: number, refLabel: string): string {
+    const absChange = Math.abs(change);
+    if (absChange < 0.002) {
+      return `<span style="color:#6b7280;font-size:10px;">\u2192 stable ${refLabel}</span>`;
+    }
+    const isUp = change > 0;
+    const color = isUp ? '#dc2626' : '#16a34a';
+    const arrow = isUp ? '\u2197' : '\u2198';
+    const sign = isUp ? '+' : '';
+    const formatted = sign + change.toFixed(3).replace('.', ',');
+    return `<span style="color:${color};font-size:10px;font-weight:600;">${arrow} ${formatted}\u20AC ${refLabel}</span>`;
+  }
+
+  const recentChange = Math.round((currentPrice - prevPrice) * 1000) / 1000;
+  const prevDate = new Date(prevEpoch);
+  const recentLabel = `(${prevDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })})`;
+
+  const yearlyChange = Math.round((currentPrice - firstPrice) * 1000) / 1000;
+  const yearlyPct = ((currentPrice - firstPrice) / firstPrice * 100).toFixed(1);
+  const firstDate = new Date(firstEpoch);
+  const yearlyLabel = `dep. ${firstDate.toLocaleDateString('fr-FR', { month: 'short' })} (${yearlyPct}%)`;
+
+  return {
+    recent: formatVar(recentChange, recentLabel),
+    yearly: formatVar(yearlyChange, yearlyLabel),
+  };
+}
+
+/**
+ * After history is loaded, inject variation indicators into existing popup DOM.
+ */
+function injectVariationIndicators(
+  popupEl: HTMLElement,
+  station: StationWithDistance,
+  history: Record<string, [number, number][]> | null,
+) {
+  const slots = popupEl.querySelectorAll('[data-fuel-var]');
+  slots.forEach((slot) => {
+    const fuel = slot.getAttribute('data-fuel-var');
+    if (!fuel) return;
+
+    const fuelInfo = station.fuels[fuel as FuelType];
+    if (!fuelInfo) return;
+
+    const variation = computeVariationHTML(fuelInfo.p, history?.[fuel]);
+    if (variation) {
+      slot.innerHTML = `${variation.recent} · ${variation.yearly}`;
+    } else {
+      slot.innerHTML = '';
+    }
+  });
+}
+
 function renderPopupHTML(
   station: StationWithDistance,
   selectedFuel: FuelType,
@@ -286,12 +373,17 @@ function renderPopupHTML(
     .map(([fuel, info]) => {
       const color = FUEL_COLORS[fuel as FuelType];
       const price = info!.p.toFixed(3).replace('.', ',');
-      return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 0;">
-        <span style="display:flex;align-items:center;gap:6px;">
-          <span style="width:8px;height:8px;border-radius:50%;background:${color};display:inline-block;"></span>
-          <span style="font-size:13px;color:#374151;">${FUEL_LABELS[fuel as FuelType]}</span>
-        </span>
-        <span style="font-size:13px;font-weight:600;color:#111827;">${price} \u20AC</span>
+      return `<div style="padding:4px 0;border-bottom:1px solid #f3f4f6;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+          <span style="display:flex;align-items:center;gap:6px;">
+            <span style="width:8px;height:8px;border-radius:50%;background:${color};display:inline-block;"></span>
+            <span style="font-size:13px;color:#374151;">${FUEL_LABELS[fuel as FuelType]}</span>
+          </span>
+          <span style="font-size:13px;font-weight:600;color:#111827;">${price} \u20AC</span>
+        </div>
+        <div data-fuel-var="${fuel}" style="padding-left:14px;min-height:14px;">
+          <span style="color:#9ca3af;font-size:10px;">...</span>
+        </div>
       </div>`;
     })
     .join('');
@@ -312,8 +404,6 @@ function renderPopupHTML(
 
   let navUrl: string;
   if (isAndroid || isIOS) {
-    // geo: URI triggers system app picker on Android and iOS 17+
-    // Falls back to default maps app on older iOS
     navUrl = `geo:${station.lat},${station.lng}?q=${station.lat},${station.lng}(${destination})`;
   } else {
     navUrl = `https://www.google.com/maps/dir/?api=1&destination=${destination}`;
@@ -330,7 +420,7 @@ function renderPopupHTML(
     : '';
 
   return `
-    <div style="min-width:180px;font-family:Inter,system-ui,sans-serif;">
+    <div style="min-width:200px;font-family:Inter,system-ui,sans-serif;">
       ${brandHTML}
       <div style="font-weight:600;font-size:13px;color:#1f2937;margin-bottom:2px;">${station.addr}</div>
       <div style="font-size:11px;color:#9ca3af;margin-bottom:8px;">${station.city} \u00b7 ${station.cp} \u00b7 ${distStr}</div>
@@ -435,6 +525,7 @@ export function MapView({
   selectedFuel,
   selectedStationId,
   onStationSelect,
+  getStationHistory,
   onVisibleBoundsChange,
   searchCenter,
   searchRadius,
@@ -471,6 +562,7 @@ export function MapView({
           selectedFuel={selectedFuel}
           selectedStationId={selectedStationId}
           onStationSelect={onStationSelect}
+          getStationHistory={getStationHistory}
           priceBounds={priceBounds}
           hoveredStationId={hoveredStationId}
         />
