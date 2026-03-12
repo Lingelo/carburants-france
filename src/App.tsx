@@ -108,13 +108,6 @@ export default function App() {
 
       const { latitude, longitude } = position.coords;
 
-      // Check if within France bounds (roughly)
-      if (latitude < 41.2 || latitude > 51.5 || longitude < -5.5 || longitude > 10) {
-        setGeoError('Cette application couvre uniquement la France');
-        setGeolocating(false);
-        return;
-      }
-
       const result = await reverseGeocode(latitude, longitude);
       if (!result) {
         setGeoError('Impossible de déterminer votre ville');

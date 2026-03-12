@@ -551,12 +551,7 @@ export function MapView({
         zoom={zoom}
         className="h-full w-full"
         zoomControl={false}
-        minZoom={5}
-        maxBounds={[
-          [41.2, -5.5],
-          [51.5, 10],
-        ]}
-        maxBoundsViscosity={1.0}
+        minZoom={3}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'

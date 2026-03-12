@@ -105,11 +105,22 @@ function normalizeBrand(raw) {
  * Returns Map<stationId, normalizedBrand>.
  */
 async function fetchOSMBrands() {
+  // Metropolitan France + DOM-TOM bounding boxes
   const query = `
     [out:json][timeout:180];
     (
       node["amenity"="fuel"]["ref:FR:prix-carburants"](41.0,-5.5,51.5,10.0);
       way["amenity"="fuel"]["ref:FR:prix-carburants"](41.0,-5.5,51.5,10.0);
+      node["amenity"="fuel"]["ref:FR:prix-carburants"](15.8,-61.9,16.6,-60.9);
+      way["amenity"="fuel"]["ref:FR:prix-carburants"](15.8,-61.9,16.6,-60.9);
+      node["amenity"="fuel"]["ref:FR:prix-carburants"](14.3,-61.3,14.9,-60.8);
+      way["amenity"="fuel"]["ref:FR:prix-carburants"](14.3,-61.3,14.9,-60.8);
+      node["amenity"="fuel"]["ref:FR:prix-carburants"](2.1,-54.6,5.8,-51.6);
+      way["amenity"="fuel"]["ref:FR:prix-carburants"](2.1,-54.6,5.8,-51.6);
+      node["amenity"="fuel"]["ref:FR:prix-carburants"](-21.4,55.2,-20.8,55.9);
+      way["amenity"="fuel"]["ref:FR:prix-carburants"](-21.4,55.2,-20.8,55.9);
+      node["amenity"="fuel"]["ref:FR:prix-carburants"](-13.1,44.9,-12.5,45.3);
+      way["amenity"="fuel"]["ref:FR:prix-carburants"](-13.1,44.9,-12.5,45.3);
     );
     out tags;
   `;
