@@ -304,8 +304,12 @@ function computeVariationHTML(
 ): { recent: string; yearly: string } | null {
   if (!fuelHistory || fuelHistory.length < 2) return null;
 
-  const [firstEpoch, firstPrice] = fuelHistory[0];
   const [prevEpoch, prevPrice] = fuelHistory[fuelHistory.length - 1];
+
+  // Find first data point in January of current year
+  const currentYear = new Date().getFullYear();
+  const jan1Epoch = new Date(currentYear, 0, 1).getTime();
+  const janEntry = fuelHistory.find(([epoch]) => epoch >= jan1Epoch);
 
   function formatVar(change: number, refLabel: string): string {
     const absChange = Math.abs(change);
@@ -324,10 +328,14 @@ function computeVariationHTML(
   const prevDate = new Date(prevEpoch);
   const recentLabel = `(${prevDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })})`;
 
-  const yearlyChange = Math.round((currentPrice - firstPrice) * 1000) / 1000;
-  const yearlyPct = ((currentPrice - firstPrice) / firstPrice * 100).toFixed(1);
-  const firstDate = new Date(firstEpoch);
-  const yearlyLabel = `dep. ${firstDate.toLocaleDateString('fr-FR', { month: 'short' })} (${yearlyPct}%)`;
+  if (!janEntry) {
+    return { recent: formatVar(recentChange, recentLabel), yearly: '' };
+  }
+
+  const [, janPrice] = janEntry;
+  const yearlyChange = Math.round((currentPrice - janPrice) * 1000) / 1000;
+  const yearlyPct = ((currentPrice - janPrice) / janPrice * 100).toFixed(1);
+  const yearlyLabel = `dep. janv. (${yearlyPct}%)`;
 
   return {
     recent: formatVar(recentChange, recentLabel),
