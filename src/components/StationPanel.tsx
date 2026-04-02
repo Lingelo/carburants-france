@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import type { FuelType, Station } from '../types';
 import { formatDistance } from '../utils/geo';
-import { getFuelPrice, formatPrice, getPriceColor } from '../utils/fuel';
+import { getFuelPrice, formatPrice, getPriceColor, hasRupture } from '../utils/fuel';
 import { getBrandDisplay } from '../utils/brands';
 
 interface StationWithDistance extends Station {
@@ -162,21 +162,27 @@ export function StationPanel({ stations, totalStations, selectedFuel, onStationC
   const { pMin: minPrice, pMax: maxPrice } = priceBounds;
 
   const withFuel = useMemo(() => {
-    const filtered = stations.filter((s) => getFuelPrice(s, selectedFuel) !== null);
+    const withPrice = stations.filter((s) => getFuelPrice(s, selectedFuel) !== null);
+    const ruptureOnly = stations.filter((s) => getFuelPrice(s, selectedFuel) === null && hasRupture(s, selectedFuel));
 
+    let sorted: StationWithDistance[];
     if (realCostMode) {
-      return [...filtered].sort((a, b) => {
+      sorted = [...withPrice].sort((a, b) => {
         const costA = computeRealCost(getFuelPrice(a, selectedFuel)!, a.distance, tankSize, consumption, hourlyRate, avgSpeed);
         const costB = computeRealCost(getFuelPrice(b, selectedFuel)!, b.distance, tankSize, consumption, hourlyRate, avgSpeed);
         return costA - costB;
       });
+    } else {
+      sorted = [...withPrice].sort((a, b) => {
+        const pa = getFuelPrice(a, selectedFuel)!;
+        const pb = getFuelPrice(b, selectedFuel)!;
+        return pa - pb;
+      });
     }
 
-    return [...filtered].sort((a, b) => {
-      const pa = getFuelPrice(a, selectedFuel)!;
-      const pb = getFuelPrice(b, selectedFuel)!;
-      return pa - pb;
-    });
+    // Append rupture-only stations at the end, sorted by distance
+    const rupturedSorted = [...ruptureOnly].sort((a, b) => a.distance - b.distance);
+    return [...sorted, ...rupturedSorted];
   }, [stations, selectedFuel, realCostMode, tankSize, consumption, hourlyRate, avgSpeed]);
 
   if (stations.length === 0) {
@@ -324,9 +330,10 @@ export function StationPanel({ stations, totalStations, selectedFuel, onStationC
       <div className="flex-1 overflow-y-auto panel-scroll">
         {withFuel.map((station) => {
           const price = getFuelPrice(station, selectedFuel);
-          if (price === null) return null;
+          const isRupture = price === null && hasRupture(station, selectedFuel);
+          if (price === null && !isRupture) return null;
           const isSelected = station.id === selectedStationId;
-          const realCost = realCostMode
+          const realCost = realCostMode && price !== null
             ? computeRealCost(price, station.distance, tankSize, consumption, hourlyRate, avgSpeed)
             : null;
 
@@ -338,7 +345,7 @@ export function StationPanel({ stations, totalStations, selectedFuel, onStationC
               onMouseLeave={() => onStationHover(null)}
               className={`flex w-full items-center justify-between gap-1.5 border-b border-gray-50 px-3 py-2 text-left transition-colors hover:bg-gray-50 ${
                 isSelected ? 'bg-blue-50' : ''
-              }`}
+              } ${isRupture ? 'opacity-60' : ''}`}
             >
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1">
@@ -364,16 +371,24 @@ export function StationPanel({ stations, totalStations, selectedFuel, onStationC
                 <div className="text-[11px] text-gray-400">{station.city}</div>
               </div>
               <div className="flex shrink-0 flex-col items-end gap-0.5">
-                <span
-                  className="rounded-full px-2 py-0.5 text-[11px] font-bold text-white"
-                  style={{ backgroundColor: getPriceColor(price, minPrice, maxPrice) }}
-                >
-                  {formatPrice(price)}
-                </span>
-                {realCost !== null && (
-                  <span className="text-[10px] font-semibold text-gray-500">
-                    {realCost.toFixed(2).replace('.', ',')} € plein
+                {isRupture ? (
+                  <span className="rounded-full bg-red-800 px-2 py-0.5 text-[11px] font-bold text-white">
+                    Rupture
                   </span>
+                ) : (
+                  <>
+                    <span
+                      className="rounded-full px-2 py-0.5 text-[11px] font-bold text-white"
+                      style={{ backgroundColor: getPriceColor(price!, minPrice, maxPrice) }}
+                    >
+                      {formatPrice(price!)}
+                    </span>
+                    {realCost !== null && (
+                      <span className="text-[10px] font-semibold text-gray-500">
+                        {realCost.toFixed(2).replace('.', ',')} € plein
+                      </span>
+                    )}
+                  </>
                 )}
               </div>
             </button>

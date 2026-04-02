@@ -16,6 +16,8 @@ export interface Station {
   cp: string;
   brand?: string;
   fuels: Partial<Record<FuelType, FuelPrice>>;
+  /** Fuel types currently in shortage (rupture) at this station */
+  ruptures?: FuelType[];
 }
 
 export interface CityResult {

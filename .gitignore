@@ -26,6 +26,9 @@ dist-ssr
 # Temp files from data pipeline
 .tmp-*
 
+# Pipeline caches (persist across CI runs via artifacts)
+known-fuels-cache.json
+
 # Generated data (built at deploy time)
 public/data/
 !public/data/history.json

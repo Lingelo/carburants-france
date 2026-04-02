@@ -90,6 +90,10 @@ export function getPriceColor(price: number, pMin: number, pMax: number): string
   return `hsl(${Math.round(h)}, ${Math.round(s)}%, ${Math.round(l)}%)`;
 }
 
+export function hasRupture(station: Station, fuel: FuelType): boolean {
+  return station.ruptures?.includes(fuel) === true;
+}
+
 export function getCheapestFuel(station: Station): FuelType | null {
   let cheapest: FuelType | null = null;
   let minPrice = Infinity;

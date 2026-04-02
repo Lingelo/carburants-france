@@ -21,6 +21,7 @@ const ROOT = join(__dirname, '..');
 const DATA_DIR = join(ROOT, 'public', 'data');
 const DEPT_DIR = join(DATA_DIR, 'departments');
 const BRANDS_CACHE = join(ROOT, 'brands-cache.json');
+const KNOWN_FUELS_CACHE = join(ROOT, 'known-fuels-cache.json');
 
 const SOURCE_URL = 'https://donnees.roulez-eco.fr/opendata/instantane';
 const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
@@ -219,6 +220,7 @@ function parseXML(xmlPath) {
           addr: '',
           city: '',
           fuels: {},
+          ruptures: [],
         };
       }
 
@@ -247,9 +249,19 @@ function parseXML(xmlPath) {
           }
         }
 
+        // Rupture (shortage) tags — e.g. <rupture id="1" nom="Gazole" debut="..." fin="" type="temporaire"/>
+        const ruptureMatch = line.match(/<rupture\s+[^>]*id="(\d+)"/);
+        if (ruptureMatch) {
+          const fuelName = FUEL_MAP[parseInt(ruptureMatch[1])];
+          if (fuelName && !currentStation.ruptures.includes(fuelName)) {
+            currentStation.ruptures.push(fuelName);
+          }
+        }
+
         // Station closing tag
         if (line.includes('</pdv>')) {
-          if (currentStation.lat && currentStation.lng && Object.keys(currentStation.fuels).length > 0) {
+          // Accept stations with fuels OR with ruptures (so shortage-only stations appear)
+          if (currentStation.lat && currentStation.lng && (Object.keys(currentStation.fuels).length > 0 || currentStation.ruptures.length > 0)) {
             stations.set(currentStation.id, currentStation);
           }
           currentStation = null;
@@ -321,6 +333,63 @@ function saveBrandsCache(brandMap) {
   console.log(`Brands cache saved: ${brandMap.size} stations.`);
 }
 
+/**
+ * Loads known-fuels cache: Map<stationId, fuelName[]>
+ * Tracks which fuels each station has been seen with historically.
+ */
+function loadKnownFuelsCache() {
+  if (!existsSync(KNOWN_FUELS_CACHE)) return new Map();
+  try {
+    const obj = JSON.parse(readFileSync(KNOWN_FUELS_CACHE, 'utf-8'));
+    const map = new Map(Object.entries(obj).map(([k, v]) => [parseInt(k), v]));
+    console.log(`Known-fuels cache loaded: ${map.size} stations.`);
+    return map;
+  } catch {
+    return new Map();
+  }
+}
+
+/**
+ * Saves known-fuels cache.
+ */
+function saveKnownFuelsCache(knownMap) {
+  const obj = Object.fromEntries(knownMap);
+  writeFileSync(KNOWN_FUELS_CACHE, JSON.stringify(obj));
+  console.log(`Known-fuels cache saved: ${knownMap.size} stations.`);
+}
+
+/**
+ * Detect implicit ruptures by comparing current fuels with known fuels.
+ * Updates the known-fuels cache with current data.
+ * Returns updated stations with ruptures filled in.
+ */
+function detectImplicitRuptures(stations, knownFuelsCache) {
+  let implicitCount = 0;
+  let explicitCount = 0;
+
+  for (const station of stations.values()) {
+    const currentFuels = Object.keys(station.fuels);
+    const known = knownFuelsCache.get(station.id) || [];
+
+    // Detect implicit ruptures: fuel was known but no longer present
+    for (const fuel of known) {
+      if (!currentFuels.includes(fuel) && !station.ruptures.includes(fuel)) {
+        station.ruptures.push(fuel);
+        implicitCount++;
+      }
+    }
+
+    // Update known fuels: merge current fuels into known set
+    const mergedFuels = [...new Set([...known, ...currentFuels])];
+    knownFuelsCache.set(station.id, mergedFuels);
+
+    if (station.ruptures.length > 0) explicitCount++;
+  }
+
+  console.log(`Ruptures: ${explicitCount} stations affected (${implicitCount} implicit detections).`);
+  return knownFuelsCache;
+}
+
 function groupByDepartment(stations, brandMap) {
   const groups = {};
   for (const station of stations.values()) {
@@ -337,6 +406,7 @@ function groupByDepartment(stations, brandMap) {
     };
     const brand = brandMap.get(station.id);
     if (brand) entry.brand = brand;
+    if (station.ruptures.length > 0) entry.ruptures = station.ruptures;
     groups[dept].push(entry);
   }
   return groups;
@@ -367,10 +437,15 @@ async function main() {
   // Save merged brands for next run
   saveBrandsCache(mergedBrands);
 
-  // 4. Group by department
+  // 4. Detect fuel shortages (explicit from XML + implicit from known-fuels cache)
+  const knownFuelsCache = loadKnownFuelsCache();
+  const updatedCache = detectImplicitRuptures(stations, knownFuelsCache);
+  saveKnownFuelsCache(updatedCache);
+
+  // 5. Group by department
   const groups = groupByDepartment(stations, mergedBrands);
 
-  // 5. Write JSON files
+  // 6. Write JSON files
   mkdirSync(DEPT_DIR, { recursive: true });
 
   let totalStations = 0;
@@ -381,13 +456,13 @@ async function main() {
     console.log(`  ${dept}.json → ${deptStations.length} stations`);
   }
 
-  // 6. Write meta.json
+  // 7. Write meta.json
   const meta = { lastUpdate: new Date().toISOString() };
   writeFileSync(join(DATA_DIR, 'meta.json'), JSON.stringify(meta));
 
   console.log(`\nDone! ${totalStations} stations in ${Object.keys(groups).length} departments.`);
 
-  // 7. Cleanup temp files
+  // 8. Cleanup temp files
   try { unlinkSync(ZIP_PATH); } catch {}
   try { unlinkSync(XML_PATH); } catch {}
 }

@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet.markercluster';
 import type { FuelType, Station } from '../types';
-import { FUEL_COLORS, FUEL_LABELS, getFuelPrice, getPriceColor } from '../utils/fuel';
+import { FUEL_COLORS, FUEL_LABELS, getFuelPrice, getPriceColor, hasRupture } from '../utils/fuel';
 import { getBrandDisplay } from '../utils/brands';
 
 // Fix default marker icons in bundled environments
@@ -74,6 +74,33 @@ function createPriceIcon(price: number, color: string, dimmed = false): L.DivIco
   });
 }
 
+function createRuptureIcon(fuelLabel: string, dimmed = false): L.DivIcon {
+  const opacity = dimmed ? '0.4' : '1';
+  return L.divIcon({
+    html: `<div style="
+      background: #991b1b;
+      color: white;
+      font-size: 10px;
+      font-weight: 700;
+      font-family: system-ui, -apple-system, sans-serif;
+      padding: 3px 6px;
+      border-radius: 10px;
+      border: 2px solid white;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+      white-space: nowrap;
+      line-height: 1;
+      text-align: center;
+      opacity: ${opacity};
+      transition: opacity 0.15s;
+      text-decoration: line-through;
+    ">${fuelLabel}</div>`,
+    className: '',
+    iconSize: [52, 22],
+    iconAnchor: [26, 11],
+    popupAnchor: [0, -13],
+  });
+}
+
 function MapUpdater({
   center,
   zoom,
@@ -133,8 +160,9 @@ function MarkerClusterGroup({
   const pricesRef = useRef<Map<number, number>>(new Map());
   const hoveredRef = useRef<number | null>(hoveredStationId);
 
+  // Include stations with the selected fuel OR in shortage for it
   const stationData = useMemo(
-    () => stations.filter((s) => getFuelPrice(s, selectedFuel) !== null),
+    () => stations.filter((s) => getFuelPrice(s, selectedFuel) !== null || hasRupture(s, selectedFuel)),
     [stations, selectedFuel],
   );
 
@@ -156,11 +184,15 @@ function MarkerClusterGroup({
       disableClusteringAtZoom: 16,
       iconCreateFunction(c) {
         const childMarkers = c.getAllChildMarkers();
-        const clusterPrices = childMarkers.map(m => (m.options as Record<string, unknown>).fuelPrice as number);
-        const cheapest = Math.min(...clusterPrices);
+        const clusterPrices = childMarkers
+          .map(m => (m.options as Record<string, unknown>).fuelPrice as number)
+          .filter(p => p !== Infinity);
+        const cheapest = clusterPrices.length > 0 ? Math.min(...clusterPrices) : 0;
         const count = c.getChildCount();
-        const color = getPriceColor(cheapest, minPrice, maxPrice);
-        const label = cheapest.toFixed(3).replace('.', ',').slice(0, -1);
+        const color = clusterPrices.length > 0 ? getPriceColor(cheapest, minPrice, maxPrice) : '#991b1b';
+        const label = clusterPrices.length > 0
+          ? cheapest.toFixed(3).replace('.', ',').slice(0, -1)
+          : 'Rupture';
 
         // Check if this cluster contains the hovered station
         const hovered = hoveredRef.current;
@@ -213,10 +245,23 @@ function MarkerClusterGroup({
     });
 
     for (const s of stationData) {
-      const price = getFuelPrice(s, selectedFuel)!;
-      const color = getPriceColor(price, minPrice, maxPrice);
-      const icon = createPriceIcon(price, color);
-      const marker = L.marker([s.lat, s.lng], { icon, fuelPrice: price, stationId: s.id } as L.MarkerOptions);
+      const price = getFuelPrice(s, selectedFuel);
+      const isRupture = hasRupture(s, selectedFuel) && price === null;
+
+      let icon: L.DivIcon;
+      if (isRupture) {
+        icon = createRuptureIcon(FUEL_LABELS[selectedFuel]);
+      } else {
+        const color = getPriceColor(price!, minPrice, maxPrice);
+        icon = createPriceIcon(price!, color);
+      }
+
+      const marker = L.marker([s.lat, s.lng], {
+        icon,
+        fuelPrice: price ?? Infinity, // Infinity so rupture stations sort last in clusters
+        stationId: s.id,
+        isRupture,
+      } as L.MarkerOptions);
 
       const popupContent = document.createElement('div');
       popupContent.innerHTML = renderPopupHTML(s, selectedFuel);
@@ -240,7 +285,7 @@ function MarkerClusterGroup({
       });
 
       newMarkers.set(s.id, marker);
-      newPrices.set(s.id, price);
+      if (!isRupture) newPrices.set(s.id, price!);
       cluster.addLayer(marker);
     }
 
@@ -274,6 +319,12 @@ function MarkerClusterGroup({
     hoveredRef.current = hoveredStationId;
     const { pMin: minPrice, pMax: maxPrice } = priceBounds;
     for (const [id, marker] of markersRef.current) {
+      const isRupture = (marker.options as Record<string, unknown>).isRupture as boolean;
+      if (isRupture) {
+        const dimmed = hoveredStationId !== null && id !== hoveredStationId;
+        marker.setIcon(createRuptureIcon(FUEL_LABELS[selectedFuel], dimmed));
+        continue;
+      }
       const price = pricesRef.current.get(id);
       if (price == null) continue;
       if (hoveredStationId === null) {
@@ -289,7 +340,7 @@ function MarkerClusterGroup({
     if (clusterRef.current) {
       clusterRef.current.refreshClusters();
     }
-  }, [hoveredStationId, priceBounds]);
+  }, [hoveredStationId, priceBounds, selectedFuel]);
 
   return null;
 }
@@ -372,7 +423,8 @@ function renderPopupHTML(
   station: StationWithDistance,
   selectedFuel: FuelType,
 ): string {
-  const fuels = Object.entries(station.fuels)
+  // Build fuel rows: available fuels + rupture fuels
+  const availableFuels = Object.entries(station.fuels)
     .sort(([a], [b]) => {
       if (a === selectedFuel) return -1;
       if (b === selectedFuel) return 1;
@@ -393,8 +445,25 @@ function renderPopupHTML(
           <span style="color:#9ca3af;font-size:10px;">...</span>
         </div>
       </div>`;
-    })
-    .join('');
+    });
+
+  // Show fuels in rupture (not currently available)
+  const ruptureFuels = (station.ruptures ?? [])
+    .filter(fuel => !station.fuels[fuel]) // Only show if not also available
+    .map(fuel => {
+      const color = FUEL_COLORS[fuel];
+      return `<div style="padding:4px 0;border-bottom:1px solid #f3f4f6;opacity:0.7;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+          <span style="display:flex;align-items:center;gap:6px;">
+            <span style="width:8px;height:8px;border-radius:50%;background:${color};display:inline-block;opacity:0.4;"></span>
+            <span style="font-size:13px;color:#991b1b;text-decoration:line-through;">${FUEL_LABELS[fuel]}</span>
+          </span>
+          <span style="font-size:11px;font-weight:600;color:#991b1b;background:#fef2f2;padding:1px 6px;border-radius:8px;">Rupture</span>
+        </div>
+      </div>`;
+    });
+
+  const fuels = [...availableFuels, ...ruptureFuels].join('');
 
   const distStr =
     station.distance < 1
