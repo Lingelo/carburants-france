@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import type { FuelType, Station } from '../types';
 import { formatDistance } from '../utils/geo';
-import { getFuelPrice, formatPrice, getPriceColor } from '../utils/fuel';
+import { getFuelPrice, formatPrice, getPriceColor, FUEL_COLORS, FUEL_LABELS, ALL_FUELS } from '../utils/fuel';
 import { getBrandDisplay } from '../utils/brands';
 
 interface StationWithDistance extends Station {
@@ -362,6 +362,23 @@ export function StationPanel({ stations, totalStations, selectedFuel, onStationC
                   </span>
                 </div>
                 <div className="text-[11px] text-gray-400">{station.city}</div>
+                {Object.keys(station.fuels).length > 1 && (
+                  <div className="flex items-center gap-1 mt-0.5">
+                    {ALL_FUELS.filter(f => f !== selectedFuel && station.fuels[f]).map(f => (
+                      <span
+                        key={f}
+                        className="flex items-center gap-0.5"
+                        title={`${FUEL_LABELS[f]}: ${station.fuels[f]!.p.toFixed(3).replace('.', ',')} €`}
+                      >
+                        <span
+                          className="inline-block h-1.5 w-1.5 rounded-full"
+                          style={{ backgroundColor: FUEL_COLORS[f] }}
+                        />
+                        <span className="text-[9px] text-gray-400">{FUEL_LABELS[f]}</span>
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
               <div className="flex shrink-0 flex-col items-end gap-0.5">
                 <span
