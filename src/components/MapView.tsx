@@ -46,19 +46,10 @@ interface Props {
   panelOpen?: boolean;
 }
 
-function createPriceIcon(price: number, color: string, dimmed = false, otherFuels?: FuelType[]): L.DivIcon {
+function createPriceIcon(price: number, color: string, dimmed = false): L.DivIcon {
   const label = price.toFixed(3).replace('.', ',').slice(0, -1); // "1,72" (2 decimals)
   const bg = dimmed ? '#d1d5db' : color;
   const opacity = dimmed ? '0.5' : '1';
-
-  const dotsHTML = otherFuels && otherFuels.length > 0
-    ? `<div style="display:flex;gap:2px;justify-content:center;margin-top:1px;">
-        ${otherFuels.map(f => `<span style="width:5px;height:5px;border-radius:50%;background:${FUEL_COLORS[f]};display:inline-block;opacity:${dimmed ? '0.4' : '0.85'};"></span>`).join('')}
-      </div>`
-    : '';
-
-  const hasOtherFuels = otherFuels && otherFuels.length > 0;
-
   return L.divIcon({
     html: `<div style="
       background: ${bg};
@@ -66,7 +57,7 @@ function createPriceIcon(price: number, color: string, dimmed = false, otherFuel
       font-size: 11px;
       font-weight: 700;
       font-family: system-ui, -apple-system, sans-serif;
-      padding: ${hasOtherFuels ? '2px 6px 1px' : '3px 6px'};
+      padding: 3px 6px;
       border-radius: 10px;
       border: 2px solid white;
       box-shadow: 0 2px 6px rgba(0,0,0,0.35);
@@ -75,11 +66,11 @@ function createPriceIcon(price: number, color: string, dimmed = false, otherFuel
       text-align: center;
       opacity: ${opacity};
       transition: opacity 0.15s;
-    ">${label}${dotsHTML}</div>`,
+    ">${label}</div>`,
     className: '',
-    iconSize: [46, hasOtherFuels ? 28 : 22],
-    iconAnchor: [23, hasOtherFuels ? 14 : 11],
-    popupAnchor: [0, hasOtherFuels ? -16 : -13],
+    iconSize: [46, 22],
+    iconAnchor: [23, 11],
+    popupAnchor: [0, -13],
   });
 }
 
@@ -224,9 +215,8 @@ function MarkerClusterGroup({
     for (const s of stationData) {
       const price = getFuelPrice(s, selectedFuel)!;
       const color = getPriceColor(price, minPrice, maxPrice);
-      const otherFuels = (Object.keys(s.fuels) as FuelType[]).filter(f => f !== selectedFuel);
-      const icon = createPriceIcon(price, color, false, otherFuels);
-      const marker = L.marker([s.lat, s.lng], { icon, fuelPrice: price, stationId: s.id, otherFuels } as L.MarkerOptions);
+      const icon = createPriceIcon(price, color);
+      const marker = L.marker([s.lat, s.lng], { icon, fuelPrice: price, stationId: s.id } as L.MarkerOptions);
 
       const popupContent = document.createElement('div');
       popupContent.innerHTML = renderPopupHTML(s, selectedFuel);
@@ -286,14 +276,13 @@ function MarkerClusterGroup({
     for (const [id, marker] of markersRef.current) {
       const price = pricesRef.current.get(id);
       if (price == null) continue;
-      const otherFuels = (marker.options as Record<string, unknown>).otherFuels as FuelType[] | undefined;
       if (hoveredStationId === null) {
         const color = getPriceColor(price, minPrice, maxPrice);
-        marker.setIcon(createPriceIcon(price, color, false, otherFuels));
+        marker.setIcon(createPriceIcon(price, color));
       } else {
         const dimmed = id !== hoveredStationId;
         const color = getPriceColor(price, minPrice, maxPrice);
-        marker.setIcon(createPriceIcon(price, color, dimmed, otherFuels));
+        marker.setIcon(createPriceIcon(price, color, dimmed));
       }
     }
     // Refresh cluster icons so they also reflect the hover state
