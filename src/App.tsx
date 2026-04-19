@@ -13,7 +13,9 @@ import { FuelFilter } from './components/FuelFilter';
 import { StationPanel } from './components/StationPanel';
 import { AboutModal } from './components/AboutModal';
 import { PriceHistoryModal } from './components/PriceHistoryModal';
+import { InstallPrompt } from './components/InstallPrompt';
 import { useStationHistory } from './hooks/useStationHistory';
+import { useOnlineStatus } from './hooks/useOnlineStatus';
 import { timeAgo, FUEL_LABELS, getFuelPrice, getPriceBounds } from './utils/fuel';
 
 const SEARCH_RADIUS_KM = 10;
@@ -40,6 +42,7 @@ export default function App() {
   const [toast, setToast] = useState<string | null>(null);
   const prevFuelRef = useRef<FuelType>(selectedFuel);
   const { getStationHistory } = useStationHistory();
+  const online = useOnlineStatus();
 
   const nearbyStations: StationWithDistance[] = useMemo(() => {
     if (!selectedCity) return [];
@@ -168,6 +171,18 @@ export default function App() {
     return () => clearTimeout(t);
   }, [toast]);
 
+  // PWA lifecycle toasts
+  useEffect(() => {
+    const offlineReady = () => setToast('App prête hors-ligne');
+    const needRefresh = () => setToast('Mise à jour installée');
+    window.addEventListener('pwa:offline-ready', offlineReady);
+    window.addEventListener('pwa:need-refresh', needRefresh);
+    return () => {
+      window.removeEventListener('pwa:offline-ready', offlineReady);
+      window.removeEventListener('pwa:need-refresh', needRefresh);
+    };
+  }, []);
+
   return (
     <div className="relative h-full w-full overflow-hidden">
       {/* Map — still receives ALL nearbyStations so markers exist even outside viewport */}
@@ -190,6 +205,24 @@ export default function App() {
         hasPanel={!!selectedCity}
         panelOpen={panelOpen}
       />
+
+      {/* Offline badge */}
+      {!online && (
+        <div className="pointer-events-none absolute left-1/2 top-[4.5rem] z-30 -translate-x-1/2 md:top-20">
+          <div className="flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-[11px] font-medium text-amber-700 shadow-md ring-1 ring-amber-200">
+            <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="1" y1="1" x2="23" y2="23" />
+              <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55" />
+              <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39" />
+              <path d="M10.71 5.05A16 16 0 0 1 22.58 9" />
+              <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88" />
+              <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
+              <line x1="12" y1="20" x2="12.01" y2="20" />
+            </svg>
+            Hors-ligne{meta?.lastUpdate ? ` — données du ${timeAgo(meta.lastUpdate)}` : ''}
+          </div>
+        </div>
+      )}
 
       {/* Top overlay: search + filters */}
       <div className="absolute left-0 right-0 top-0 z-10 p-3 md:p-4">
@@ -285,6 +318,7 @@ export default function App() {
               </svg>
               <span>ou tapez une ville ci-dessus</span>
             </button>
+            <InstallPrompt />
           </div>
         </div>
       )}
