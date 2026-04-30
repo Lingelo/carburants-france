@@ -13,8 +13,10 @@ import { FuelFilter } from './components/FuelFilter';
 import { StationPanel } from './components/StationPanel';
 import { AboutModal } from './components/AboutModal';
 import { PriceHistoryModal } from './components/PriceHistoryModal';
+import { InstallInstructionsModal } from './components/InstallInstructionsModal';
 import { Footer } from './components/Footer';
 import { useStationHistory } from './hooks/useStationHistory';
+import { useInstallPrompt } from './hooks/useInstallPrompt';
 import { timeAgo, FUEL_LABELS, getFuelPrice, getPriceBounds } from './utils/fuel';
 
 const SEARCH_RADIUS_KM = 10;
@@ -41,6 +43,7 @@ export default function App() {
   const [toast, setToast] = useState<string | null>(null);
   const prevFuelRef = useRef<FuelType>(selectedFuel);
   const { getStationHistory } = useStationHistory();
+  const install = useInstallPrompt();
 
   const nearbyStations: StationWithDistance[] = useMemo(() => {
     if (!selectedCity) return [];
@@ -265,10 +268,19 @@ export default function App() {
         </div>
       )}
 
-      {/* Welcome overlay — visible only when no city selected and not loading */}
+      {/*
+       * Welcome overlay — visible only when no city is selected and not loading.
+       *
+       * HARD GATE for future PRs: the install invitation below lives only in
+       * this overlay, which disappears once a city is selected. If a future
+       * PR adds last-city restoration (e.g. UI redesign), it MUST add a
+       * secondary entry point for the install invitation (typically a
+       * "Installer" button in the Footer that consumes useInstallPrompt) —
+       * otherwise returning users will never see the invite again.
+       */}
       {!selectedCity && !stationsLoading && (
         <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
-          <div className="glass pointer-events-auto mx-4 flex max-w-sm flex-col items-center rounded-3xl px-8 py-10 text-center shadow-2xl">
+          <div className="glass pointer-events-auto mx-4 flex max-w-sm flex-col items-center rounded-3xl px-6 py-6 text-center shadow-2xl sm:px-8 sm:py-10">
             <h2 className="mb-1 text-xl font-bold text-gray-800">Trouvez le carburant le moins cher</h2>
             <p className="mb-6 text-sm text-gray-500">Recherchez votre ville ou utilisez votre position</p>
             <button
@@ -298,6 +310,23 @@ export default function App() {
               </svg>
               <span>ou tapez une ville ci-dessus</span>
             </button>
+            {install.shouldShow && (
+              <button
+                type="button"
+                onClick={install.handleInviteClick}
+                className="mt-3 flex flex-col items-center gap-0.5 text-xs text-gray-400 transition-colors hover:text-gray-600"
+              >
+                <span className="flex items-center gap-1">
+                  <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M12 3v12" />
+                    <path d="M7 11l5 4 5-4" />
+                    <path d="M5 19h14" />
+                  </svg>
+                  Installer l'application
+                </span>
+                <span className="text-[10px] text-gray-400">Lancement instantané depuis l'écran d'accueil</span>
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -311,6 +340,12 @@ export default function App() {
 
       {showAbout && <AboutModal onClose={() => setShowAbout(false)} lastUpdate={meta?.lastUpdate} />}
       {showHistory && <PriceHistoryModal onClose={() => setShowHistory(false)} />}
+      <InstallInstructionsModal
+        open={install.modalOpen}
+        onClose={install.closeModal}
+        context={install.modalContext}
+      />
+
 
       {/* Station panel — uses visibleStations (synced with map viewport) */}
       {selectedCity && (
