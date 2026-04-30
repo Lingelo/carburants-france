@@ -1,12 +1,12 @@
 import type { FuelType, Station } from '../types';
 
 export const FUEL_COLORS: Record<FuelType, string> = {
-  SP95: '#22c55e',
-  SP98: '#3b82f6',
-  E10: '#14b8a6',
-  Gazole: '#f97316',
-  E85: '#8b5cf6',
-  GPLc: '#6b7280',
+  SP95: '#16a34a',     // green-600
+  SP98: '#2563eb',     // blue-600
+  E10: '#0d9488',      // teal-600
+  Gazole: '#ea580c',   // orange-600
+  E85: '#7c3aed',      // violet-600
+  GPLc: '#525252',     // neutral-600
 };
 
 export const FUEL_LABELS: Record<FuelType, string> = {

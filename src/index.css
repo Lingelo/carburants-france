@@ -13,14 +13,15 @@
 @theme {
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
 
-  /* Fuel wayfinding (preserved — système de wayfinding cartographique,
-     porte l'expressivité visuelle de l'app) */
-  --color-sp95: #22c55e;
-  --color-sp98: #3b82f6;
-  --color-e10: #14b8a6;
-  --color-gazole: #f97316;
-  --color-e85: #8b5cf6;
-  --color-gplc: #6b7280;
+  /* Fuel wayfinding (porte l'expressivité visuelle de l'app, accordée à
+     l'identité neutre — saturation 600 plutôt que 500). Doit rester
+     synchronisé avec FUEL_COLORS dans src/utils/fuel.ts. */
+  --color-sp95: #16a34a;     /* green-600 */
+  --color-sp98: #2563eb;     /* blue-600 */
+  --color-e10: #0d9488;      /* teal-600 */
+  --color-gazole: #ea580c;   /* orange-600 */
+  --color-e85: #7c3aed;      /* violet-600 */
+  --color-gplc: #525252;     /* neutral-600 */
 
   /* Semantic tokens used directly in MapView popup HTML (template strings,
      can't go through Tailwind utilities) */
@@ -110,22 +111,24 @@ html, body, #root {
   border-radius: 2px;
 }
 
-/* Marker cluster overrides */
+/* Marker cluster overrides — count-based signaling (small/medium/large),
+   not fuel-related. Aligned to the same 600-saturation register as
+   FUEL_COLORS for visual coherence. */
 .marker-cluster-small {
-  background-color: rgba(34, 197, 94, 0.3) !important;
+  background-color: rgba(22, 163, 74, 0.3) !important;   /* green-600 */
 }
 .marker-cluster-small div {
-  background-color: rgba(34, 197, 94, 0.6) !important;
+  background-color: rgba(22, 163, 74, 0.6) !important;
 }
 .marker-cluster-medium {
-  background-color: rgba(249, 115, 22, 0.3) !important;
+  background-color: rgba(234, 88, 12, 0.3) !important;   /* orange-600 */
 }
 .marker-cluster-medium div {
-  background-color: rgba(249, 115, 22, 0.6) !important;
+  background-color: rgba(234, 88, 12, 0.6) !important;
 }
 .marker-cluster-large {
-  background-color: rgba(239, 68, 68, 0.3) !important;
+  background-color: rgba(220, 38, 38, 0.3) !important;   /* red-600 */
 }
 .marker-cluster-large div {
-  background-color: rgba(239, 68, 68, 0.6) !important;
+  background-color: rgba(220, 38, 38, 0.6) !important;
 }
