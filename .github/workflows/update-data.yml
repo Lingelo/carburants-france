@@ -52,6 +52,13 @@ jobs:
 
       - name: Build
         run: npm run build
+        env:
+          # Same opt-in MapTiler injection as deploy.yml — keeps cron and
+          # push-deploy in sync so the FR-tile path is identical whether
+          # the deploy was triggered by main push or the 2h cron. When
+          # the secret is absent (current state), BaseTileLayer falls
+          # back to CARTO automatically — no error.
+          VITE_MAPTILER_KEY: ${{ secrets.MAPTILER_KEY }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v4
