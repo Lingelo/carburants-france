@@ -525,7 +525,10 @@ function SearchRadiusCircle({
     circle.addTo(map);
     circleRef.current = circle;
 
-    // Center marker — car icon in a rounded square badge (app-icon style)
+    // Center marker — top-down car silhouette in a rounded-square badge.
+    // Custom SVG (no Unicode emoji renders top-down by default — 🚗 is
+    // side-view on every platform). Drop shadow stays for depth on the
+    // pale CARTO basemap.
     const carIcon = L.divIcon({
       html: `
         <div style="
@@ -538,12 +541,16 @@ function SearchRadiusCircle({
           align-items: center;
           justify-content: center;
         ">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-               stroke="white" stroke-width="2"
-               stroke-linecap="round" stroke-linejoin="round">
-            <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9L18 10l-2.7-3.6A2 2 0 0013.7 5H6.3a2 2 0 00-1.6.9L2 9.5 1.5 11C.7 11.3 0 12.1 0 13v3c0 .6.4 1 1 1h2"/>
-            <circle cx="7" cy="17" r="2"/>
-            <circle cx="17" cy="17" r="2"/>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+            <!-- car body (top-down silhouette) -->
+            <rect x="6" y="2" width="12" height="20" rx="3" />
+            <!-- windshield (front) -->
+            <rect x="8" y="5" width="8" height="4" rx="1" fill="#171717" opacity="0.7" />
+            <!-- rear window -->
+            <rect x="8" y="15" width="8" height="4" rx="1" fill="#171717" opacity="0.7" />
+            <!-- side mirrors -->
+            <rect x="4" y="7" width="2" height="2" rx="0.5" />
+            <rect x="18" y="7" width="2" height="2" rx="0.5" />
           </svg>
         </div>`,
       className: '',

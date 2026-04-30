@@ -27,11 +27,10 @@ export function FuelFilter({ selected, onChange }: Props) {
           <ToggleGroupItem
             key={fuel}
             value={fuel}
-            className="flex items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1 text-xs font-medium transition-all data-[state=off]:border-transparent data-[state=off]:bg-gray-100 data-[state=off]:text-gray-500 data-[state=off]:hover:bg-gray-200"
+            className="flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium transition-all data-[state=off]:bg-gray-100 data-[state=off]:text-gray-500 data-[state=off]:hover:bg-gray-200"
             style={isActive ? {
               backgroundColor: color + '20',
               color,
-              borderColor: color + '40',
             } : undefined}
           >
             <span
