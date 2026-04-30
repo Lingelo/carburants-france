@@ -46,8 +46,12 @@ interface Props {
   panelOpen?: boolean;
 }
 
-// Tile layer with FR labels (MapTiler positron) when VITE_MAPTILER_KEY is set,
-// CARTO light_all fallback when key is absent or MapTiler returns errors at runtime.
+// Tile layer with FR labels (MapTiler dataviz-light) when VITE_MAPTILER_KEY
+// is set, CARTO light_all fallback when key is absent or MapTiler returns
+// errors at runtime. dataviz-light chosen over streets-v4 / bright-v2
+// because the FUEL_COLORS markers (Gazole orange, SP95 green, SP98 blue,
+// E10 teal, E85 violet, GPLc gray) need a neutral basemap to stay
+// readable; a colored streets style would clash with the price markers.
 function BaseTileLayer() {
   const maptilerKey = import.meta.env.VITE_MAPTILER_KEY;
   const [useFallback, setUseFallback] = useState(false);
@@ -64,7 +68,7 @@ function BaseTileLayer() {
   return (
     <TileLayer
       attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://www.maptiler.com/">MapTiler</a>'
-      url={`https://api.maptiler.com/maps/positron/{z}/{x}/{y}.png?key=${maptilerKey}&lang=fr`}
+      url={`https://api.maptiler.com/maps/dataviz-light/{z}/{x}/{y}.png?key=${maptilerKey}&lang=fr`}
       eventHandlers={{ tileerror: () => setUseFallback(true) }}
     />
   );
