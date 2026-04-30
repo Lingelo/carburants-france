@@ -15,6 +15,25 @@ node scripts/fetch-vehicles.mjs  # Refresh vehicle specs (ADEME + EEA) → publi
 
 Note: `base` is `/carburants-france/` (GitHub Pages subpath), so dev server serves at that path.
 
+## Local setup
+
+For local dev, copy `.env.example` to `.env.local` and fill in the values you actually need. `.env.local` is gitignored (`.gitignore` covers `.env`, `.env.local`, and `*.local`).
+
+Currently optional (becomes required for the **UI redesign** branch when R1/U1 lands):
+
+- `VITE_MAPTILER_KEY` — MapTiler API key for the FR-localized tile provider. Create a free account at https://cloud.maptiler.com/, restrict the key by HTTP Referrer (`*.github.io/carburants-france/*`) and configure a hard quota cap in the dashboard. Note: Vite inlines `VITE_*` vars into the public JS bundle at build time, so this key is publicly visible in production — the `.env.local` only keeps it out of source. Use the dashboard restrictions, not secrecy, as the actual abuse mitigation.
+
+In CI, secrets are injected via the `env:` block at the build step in `.github/workflows/deploy.yml`, sourced from GitHub Actions repository secrets.
+
+## Planning artefacts
+
+This repo follows the compound-engineering plan/brainstorm convention:
+
+- `docs/brainstorms/*-requirements.md` — product requirement docs (origin for plans)
+- `docs/plans/*-plan.md` — implementation plans (consumed by `/ce:work`)
+- `docs/regression-checklist-*.md` — manual regression checklists attached to PRs (no test runner in this project)
+- `docs/marianne-licence-a4-notes.md` — A4 pre-work notes for the UI redesign plan
+
 ## Architecture
 
 Single-page React 19 + TypeScript app displaying French fuel station prices on a Leaflet map. No router — all state lives in `App.tsx` via hooks.
