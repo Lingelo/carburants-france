@@ -1,11 +1,19 @@
 ---
 title: UI redesign — service public moderne (2-wave with gate)
 type: feat
-status: active
+status: superseded
 date: 2026-04-30
 origin: docs/brainstorms/ui-redesign-service-public-requirements.md
 deepened: 2026-04-30
 ---
+
+> **Note (2026-04-30, post-livraison)** : direction d'identité pivotée à
+> mi-parcours vers du **neutre moderne** (charcoal `#171717` + blanc +
+> FUEL_COLORS). MapTiler abandonné (overkill pour le projet). Marianne
+> jamais activée. Feature « coût réel » supprimée. Test pastiche et
+> disclaimer R8 retirés (non-pertinents pour la nouvelle identité). Ce
+> plan reste comme trace de la stratégie initiale ; pour l'état effectif
+> du code voir l'historique git de `claude/pwa-conversion-3NXOl`.
 
 # UI redesign — service public moderne (2-wave with gate)
 

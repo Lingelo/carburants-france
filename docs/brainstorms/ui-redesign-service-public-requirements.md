@@ -1,7 +1,15 @@
 ---
 date: 2026-04-30
 topic: ui-redesign-service-public
+status: superseded
 ---
+
+> **Note (2026-04-30, post-livraison)** : la direction « service public moderne »
+> a été abandonnée à mi-parcours au profit d'une identité **neutre moderne**
+> (charcoal `#171717` + blanc + FUEL_COLORS comme seul système expressif).
+> La feature « coût d'un plein selon véhicule » a aussi été supprimée. Ce doc
+> reste comme trace historique du raisonnement initial. Voir le commit du pivot
+> dans la branche `claude/pwa-conversion-3NXOl` pour les changements concrets.
 
 # Refonte UI — direction « service public moderne »
 
