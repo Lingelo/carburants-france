@@ -87,6 +87,14 @@ export function AboutModal({ onClose, lastUpdate }: Props) {
           </ul>
         </div>
 
+        {/* Marianne attribution — uncomment when activating R3 (self-hosted .woff2 in /public/fonts/).
+            Etalab 2.0 mandates attribution for the typo. Keep alongside the data sources block.
+        <p className="mt-3 text-[11px] text-gray-400">
+          Typographie&nbsp;: <strong>Marianne</strong>, mise à disposition par DINUM sous{' '}
+          <a href="https://github.com/etalab/licence-ouverte/blob/master/LO.md" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Licence Ouverte 2.0</a>.
+        </p>
+        */}
+
         {lastUpdate && (
           <div className="mt-5 flex items-center gap-2 rounded-lg bg-primary/10 px-3 py-2 text-xs text-primary">
             <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

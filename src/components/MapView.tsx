@@ -405,13 +405,28 @@ function renderPopupHTML(
     .map(([fuel, info]) => {
       const color = FUEL_COLORS[fuel as FuelType];
       const price = info!.p.toFixed(3).replace('.', ',');
+
+      // Stale indicator (R9): if last update > 72h ago, show warning icon
+      // + tooltip + faded price color. The popup runs in raw HTML so the
+      // tooltip uses the native `title` attribute (no custom UI lib).
+      const ageMs = Date.now() - new Date(info!.d).getTime();
+      const stale = ageMs > 72 * 60 * 60 * 1000;
+      const hoursAgo = Math.round(ageMs / (60 * 60 * 1000));
+      const priceColor = stale ? 'var(--color-ink-muted)' : 'var(--color-ink)';
+      const staleIcon = stale
+        ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-alert)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;" aria-label="Donn\u00E9e non rafra\u00EEchie depuis ${hoursAgo} h"><title>Donn\u00E9e non rafra\u00EEchie depuis ${hoursAgo} h</title><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`
+        : '';
+
       return `<div style="padding:4px 0;border-bottom:1px solid color-mix(in srgb, var(--color-ink-muted) 20%, transparent);">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
           <span style="display:flex;align-items:center;gap:6px;">
             <span style="width:8px;height:8px;border-radius:50%;background:${color};display:inline-block;"></span>
             <span style="font-size:13px;color:var(--color-ink);">${FUEL_LABELS[fuel as FuelType]}</span>
           </span>
-          <span style="font-size:13px;font-weight:600;color:var(--color-ink);">${price} \u20AC</span>
+          <span style="display:flex;align-items:center;gap:5px;">
+            ${staleIcon}
+            <span style="font-size:13px;font-weight:600;color:${priceColor};">${price} \u20AC</span>
+          </span>
         </div>
         <div data-fuel-var="${fuel}" style="padding-left:14px;min-height:14px;">
           <span style="color:var(--color-ink-muted);font-size:10px;">...</span>
