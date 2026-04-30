@@ -525,11 +525,14 @@ function SearchRadiusCircle({
     circle.addTo(map);
     circleRef.current = circle;
 
-    // Center marker — black top-down car silhouette, no badge.
+    // Center marker — bleu pétrole (sky-900) top-down car silhouette.
+    // Picked because: automotive/fuel-themed (pétrole), distinct from
+    // the FUEL_COLORS palette (no marker conflict), and distinct from
+    // --color-primary charcoal so it stands apart from UI chrome.
     // Drop shadow lifts the SVG off the pale CARTO basemap.
     const carIcon = L.divIcon({
       html: `
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="#171717"
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="#0c4a6e"
              style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));">
           <!-- car body (top-down silhouette) -->
           <rect x="6" y="2" width="12" height="20" rx="3" />
