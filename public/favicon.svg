@@ -1,3 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <text y=".9em" font-size="90">⛽</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#171717"/>
+  <path d="M256 88
+           C256 88, 128 248, 128 344
+           C128 422, 184 456, 256 456
+           C328 456, 384 422, 384 344
+           C384 248, 256 88, 256 88 Z"
+        fill="white"/>
+  <ellipse cx="218" cy="372" rx="22" ry="14" fill="#171717" opacity="0.08"/>
+  <circle cx="400" cy="400" r="36" fill="#0c4a6e"/>
 </svg>

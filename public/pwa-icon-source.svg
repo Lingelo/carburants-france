@@ -1,19 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" fill="#3b82f6"/>
-  <g fill="white">
-    <rect x="130" y="110" width="160" height="300" rx="18"/>
-    <rect x="110" y="400" width="200" height="24" rx="6"/>
-  </g>
-  <g fill="#1d4ed8">
-    <rect x="155" y="140" width="110" height="74" rx="8"/>
-  </g>
-  <g fill="white">
-    <rect x="170" y="160" width="50" height="7" rx="3"/>
-    <rect x="170" y="176" width="70" height="7" rx="3"/>
-    <rect x="170" y="192" width="40" height="7" rx="3"/>
-  </g>
-  <rect x="155" y="234" width="110" height="22" rx="5" fill="#93c5fd"/>
-  <path d="M290 250 H348 V160 Q348 144 364 144 H384 Q400 144 400 160 V330 Q400 360 370 360 H290"
-        stroke="white" stroke-width="22" fill="none" stroke-linejoin="round" stroke-linecap="round"/>
-  <circle cx="392" cy="180" r="10" fill="#3b82f6"/>
+  <rect width="512" height="512" rx="96" fill="#171717"/>
+  <path d="M256 88
+           C256 88, 128 248, 128 344
+           C128 422, 184 456, 256 456
+           C328 456, 384 422, 384 344
+           C384 248, 256 88, 256 88 Z"
+        fill="white"/>
+  <ellipse cx="218" cy="372" rx="22" ry="14" fill="#171717" opacity="0.08"/>
+  <circle cx="400" cy="400" r="36" fill="#0c4a6e"/>
 </svg>

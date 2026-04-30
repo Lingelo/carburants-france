@@ -10,6 +10,7 @@ npm run build      # tsc -b && vite build → dist/
 npm run lint       # ESLint (flat config)
 npm run preview    # Preview built dist/ locally
 node scripts/process-data.mjs    # Refresh fuel data from gouv.fr API
+node scripts/generate-pwa-icons.mjs    # After editing public/pwa-icon-source.svg
 ```
 
 Note: `base` is `/carburants-france/` (GitHub Pages subpath), so dev server serves at that path.
