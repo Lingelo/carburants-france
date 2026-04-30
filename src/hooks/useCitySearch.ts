@@ -7,11 +7,16 @@ export function useCitySearch() {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<CityResult[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<'network' | null>(null);
+  const [searched, setSearched] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const lastQueryRef = useRef<string>('');
 
   const search = useCallback((q: string) => {
     setQuery(q);
+    setError(null);
+    setSearched(false);
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
@@ -21,6 +26,7 @@ export function useCitySearch() {
       return;
     }
 
+    lastQueryRef.current = q;
     setLoading(true);
     debounceRef.current = setTimeout(async () => {
       abortRef.current?.abort();
@@ -91,15 +97,26 @@ export function useCitySearch() {
         }
 
         setResults(cities);
+        setSearched(true);
       } catch (err) {
         if ((err as Error).name !== 'AbortError') {
           setResults([]);
+          setError('network');
         }
       } finally {
         setLoading(false);
       }
     }, 300);
   }, []);
+
+  const retry = useCallback(() => {
+    if (lastQueryRef.current.trim().length < 2) return;
+    setError(null);
+    setLoading(true);
+    // Bypass debounce — re-fire immediately
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    search(lastQueryRef.current);
+  }, [search]);
 
   useEffect(() => {
     return () => {
@@ -111,9 +128,12 @@ export function useCitySearch() {
   const setQuery_ = useCallback((q: string) => {
     setQuery(q);
     setResults([]);
+    setSearched(false);
+    setError(null);
+    setLoading(false);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     abortRef.current?.abort();
   }, []);
 
-  return { query, search, results, loading, setResults, setQuery: setQuery_ };
+  return { query, search, results, loading, error, searched, retry, setResults, setQuery: setQuery_ };
 }

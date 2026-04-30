@@ -18,10 +18,17 @@ export function useMapView() {
     bounds: null,
   });
 
-  const flyToCity = useCallback((lat: number, lng: number, _radiusKm: number) => {
+  const flyToCity = useCallback((lat: number, lng: number) => {
     // Zoom to city level (~5 km diameter), not the full search radius
     const center = L.latLng(lat, lng);
     const bounds = center.toBounds(5 * 1000); // 5 km diameter = city level
+    setView({ center: [lat, lng], zoom: FRANCE_ZOOM, bounds });
+  }, []);
+
+  const flyToStation = useCallback((lat: number, lng: number) => {
+    // Tighter than flyToCity — center precisely on the marker, zoom in
+    const center = L.latLng(lat, lng);
+    const bounds = center.toBounds(800); // 800m diameter = street level
     setView({ center: [lat, lng], zoom: FRANCE_ZOOM, bounds });
   }, []);
 
@@ -29,5 +36,5 @@ export function useMapView() {
     setView({ center: FRANCE_CENTER, zoom: FRANCE_ZOOM, bounds: null });
   }, []);
 
-  return { ...view, flyToCity, resetView };
+  return { ...view, flyToCity, flyToStation, resetView };
 }

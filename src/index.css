@@ -2,15 +2,82 @@
 @import "leaflet/dist/leaflet.css";
 @import "leaflet.markercluster/dist/MarkerCluster.css";
 @import "leaflet.markercluster/dist/MarkerCluster.Default.css";
+@import "tw-animate-css";
 
+/*
+ ---break---
+ */
+@custom-variant dark (&:is(.dark *));
+
+/* App tokens — neutral modern identity. */
 @theme {
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  --color-sp95: #22c55e;
-  --color-sp98: #3b82f6;
-  --color-e10: #14b8a6;
-  --color-gazole: #f97316;
-  --color-e85: #8b5cf6;
-  --color-gplc: #6b7280;
+
+  /* Fuel wayfinding (porte l'expressivité visuelle de l'app, accordée à
+     l'identité neutre — saturation 600 plutôt que 500). Doit rester
+     synchronisé avec FUEL_COLORS dans src/utils/fuel.ts. */
+  --color-sp95: #16a34a;     /* green-600 */
+  --color-sp98: #2563eb;     /* blue-600 */
+  --color-e10: #0d9488;      /* teal-600 */
+  --color-gazole: #ea580c;   /* orange-600 */
+  --color-e85: #7c3aed;      /* violet-600 */
+  --color-gplc: #525252;     /* neutral-600 */
+
+  /* Semantic tokens used directly in MapView popup HTML (template strings,
+     can't go through Tailwind utilities) */
+  --color-alert: #dc2626;     /* red-600 — hausses prix / erreurs */
+  --color-success: #15803d;   /* green-700 — baisses prix */
+  --color-ink: #171717;       /* near-black — text primary */
+  --color-ink-muted: #525252; /* neutral-600 — text secondary */
+}
+
+/* shadcn/ui token surface — bridged to our palette so shadcn components
+   adopt our identity automatically. */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+}
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;       /* var(--color-ink) */
+  --card: #ffffff;
+  --card-foreground: #171717;
+  --popover: #ffffff;
+  --popover-foreground: #171717;
+  --primary: #171717;          /* charcoal — neutral, not gov.fr */
+  --primary-foreground: #ffffff;
+  --secondary: #f5f5f5;        /* neutral-100 */
+  --secondary-foreground: #171717;
+  --muted: #f5f5f5;
+  --muted-foreground: #525252; /* var(--color-ink-muted) */
+  --accent: #f5f5f5;
+  --accent-foreground: #171717;
+  --destructive: #dc2626;      /* var(--color-alert) */
+  --border: #e5e5e5;           /* neutral-200 */
+  --input: #e5e5e5;
+  --ring: #171717;             /* focus ring = primary */
+  --radius: 0.625rem;
 }
 
 html, body, #root {
@@ -25,7 +92,7 @@ html, body, #root {
   z-index: 0;
 }
 
-/* Frosted glass effect */
+/* Frosted glass effect (used on overlays, header, panels) */
 .glass {
   background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(12px);
@@ -44,22 +111,24 @@ html, body, #root {
   border-radius: 2px;
 }
 
-/* Marker cluster overrides */
+/* Marker cluster overrides — count-based signaling (small/medium/large),
+   not fuel-related. Aligned to the same 600-saturation register as
+   FUEL_COLORS for visual coherence. */
 .marker-cluster-small {
-  background-color: rgba(34, 197, 94, 0.3) !important;
+  background-color: rgba(22, 163, 74, 0.3) !important;   /* green-600 */
 }
 .marker-cluster-small div {
-  background-color: rgba(34, 197, 94, 0.6) !important;
+  background-color: rgba(22, 163, 74, 0.6) !important;
 }
 .marker-cluster-medium {
-  background-color: rgba(249, 115, 22, 0.3) !important;
+  background-color: rgba(234, 88, 12, 0.3) !important;   /* orange-600 */
 }
 .marker-cluster-medium div {
-  background-color: rgba(249, 115, 22, 0.6) !important;
+  background-color: rgba(234, 88, 12, 0.6) !important;
 }
 .marker-cluster-large {
-  background-color: rgba(239, 68, 68, 0.3) !important;
+  background-color: rgba(220, 38, 38, 0.3) !important;   /* red-600 */
 }
 .marker-cluster-large div {
-  background-color: rgba(239, 68, 68, 0.6) !important;
+  background-color: rgba(220, 38, 38, 0.6) !important;
 }

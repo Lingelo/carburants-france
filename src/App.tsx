@@ -13,6 +13,7 @@ import { FuelFilter } from './components/FuelFilter';
 import { StationPanel } from './components/StationPanel';
 import { AboutModal } from './components/AboutModal';
 import { PriceHistoryModal } from './components/PriceHistoryModal';
+import { Footer } from './components/Footer';
 import { useStationHistory } from './hooks/useStationHistory';
 import { timeAgo, FUEL_LABELS, getFuelPrice, getPriceBounds } from './utils/fuel';
 
@@ -23,9 +24,9 @@ interface StationWithDistance extends Station {
 }
 
 export default function App() {
-  const { query, search, results, loading: searchLoading, setResults, setQuery } = useCitySearch();
+  const { query, search, results, loading: searchLoading, error: searchError, searched: searchSearched, retry: searchRetry, setResults, setQuery } = useCitySearch();
   const { stations, loading: stationsLoading, error, meta, loadDepartments, resetStations } = useStations();
-  const { center, zoom, bounds, flyToCity } = useMapView();
+  const { center, zoom, bounds, flyToCity, flyToStation } = useMapView();
 
   const [selectedFuel, setSelectedFuel] = useState<FuelType>('Gazole');
   const [selectedCity, setSelectedCity] = useState<CityResult | null>(null);
@@ -72,14 +73,15 @@ export default function App() {
       const dept = getDepartmentFromPostalCode(city.postcode);
       const depts = getDepartmentWithNeighbors(dept);
       await loadDepartments(depts);
-      flyToCity(city.lat, city.lng, SEARCH_RADIUS_KM);
+      flyToCity(city.lat, city.lng);
     },
     [search, setResults, loadDepartments, resetStations, flyToCity],
   );
 
   const handleStationClick = useCallback((station: StationWithDistance) => {
     setSelectedStationId(station.id);
-  }, []);
+    flyToStation(station.lat, station.lng);
+  }, [flyToStation]);
 
   const handleClear = useCallback(() => {
     setResults([]);
@@ -170,6 +172,14 @@ export default function App() {
 
   return (
     <div className="relative h-full w-full overflow-hidden">
+      {/* Skip-nav link — visually hidden until focused (WCAG 2.4.1) */}
+      <a
+        href="#city-search"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-[2000] focus:rounded-md focus:bg-primary focus:px-3 focus:py-1.5 focus:text-sm focus:font-medium focus:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+      >
+        Aller à la recherche
+      </a>
+
       {/* Map — still receives ALL nearbyStations so markers exist even outside viewport */}
       <MapView
         center={center}
@@ -208,6 +218,9 @@ export default function App() {
             onSearch={search}
             results={results}
             loading={searchLoading}
+            error={searchError}
+            searched={searchSearched}
+            onRetry={searchRetry}
             onSelect={handleCitySelect}
             onClear={handleClear}
           />
@@ -245,7 +258,7 @@ export default function App() {
 
       {/* Geo error */}
       {geoError && (
-        <div className="absolute bottom-24 left-1/2 z-20 -translate-x-1/2 md:bottom-8">
+        <div className="absolute bottom-24 left-1/2 z-20 -translate-x-1/2 md:bottom-8" role="alert">
           <div className="rounded-xl bg-red-50 px-5 py-2.5 text-sm text-red-600 shadow-lg whitespace-nowrap">
             {geoError}
           </div>
@@ -261,7 +274,7 @@ export default function App() {
             <button
               onClick={handleGeolocate}
               disabled={geolocating}
-              className="flex items-center gap-2 rounded-xl bg-blue-500 px-6 py-3 text-sm font-semibold text-white shadow-md transition-colors hover:bg-blue-600 disabled:opacity-60"
+              className="flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white shadow-md transition-colors hover:opacity-90 disabled:opacity-60"
             >
               {geolocating ? (
                 <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
@@ -289,30 +302,12 @@ export default function App() {
         </div>
       )}
 
-      {/* Footer */}
-      <div className={`absolute bottom-2 left-2 z-10 flex items-center gap-2 rounded-lg bg-white/80 px-3 py-1.5 text-[11px] text-gray-500 shadow-sm backdrop-blur-sm ${selectedCity ? 'hidden md:flex' : ''}`}>
-        <button
-          onClick={() => setShowAbout(true)}
-          className="font-medium text-gray-600 hover:text-gray-900 underline decoration-gray-300 underline-offset-2"
-        >
-          À propos
-        </button>
-        <span className="text-gray-300">·</span>
-        <button
-          onClick={() => setShowHistory(true)}
-          className="font-medium text-gray-600 hover:text-gray-900 underline decoration-gray-300 underline-offset-2"
-        >
-          Évolution des prix
-        </button>
-        <span className="text-gray-300">·</span>
-        <span>Données gouv.fr</span>
-        {meta?.lastUpdate && (
-          <>
-            <span className="text-gray-300">·</span>
-            <span>MAJ {timeAgo(meta.lastUpdate)}</span>
-          </>
-        )}
-      </div>
+      <Footer
+        onShowAbout={() => setShowAbout(true)}
+        onShowHistory={() => setShowHistory(true)}
+        lastUpdate={meta?.lastUpdate}
+        hasCity={!!selectedCity}
+      />
 
       {showAbout && <AboutModal onClose={() => setShowAbout(false)} lastUpdate={meta?.lastUpdate} />}
       {showHistory && <PriceHistoryModal onClose={() => setShowHistory(false)} />}

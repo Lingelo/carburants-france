@@ -1,4 +1,4 @@
-import { useEffect, useRef, useMemo } from 'react';
+import { useEffect, useRef, useMemo, useState } from 'react';
 import { MapContainer, TileLayer, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet.markercluster';
@@ -46,9 +46,38 @@ interface Props {
   panelOpen?: boolean;
 }
 
+// Tile layer — CARTO light_all by default (neutral minimal aesthetic, lets
+// FUEL_COLORS markers stand out, free, no setup). Labels are in English
+// for non-French zones (Germany/Spain/Italy borders) — accepted trade-off
+// vs OSM France which clashed visually with the markers.
+// MapTiler dataviz-light remains an opt-in upgrade when VITE_MAPTILER_KEY
+// is set (FR labels + modern minimal aesthetic, but requires account + CI
+// secret + dashboard config).
+function BaseTileLayer() {
+  const maptilerKey = import.meta.env.VITE_MAPTILER_KEY;
+  const [useFallback, setUseFallback] = useState(false);
+
+  if (!maptilerKey || useFallback) {
+    return (
+      <TileLayer
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
+        url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+      />
+    );
+  }
+
+  return (
+    <TileLayer
+      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://www.maptiler.com/">MapTiler</a>'
+      url={`https://api.maptiler.com/maps/dataviz-light/{z}/{x}/{y}.png?key=${maptilerKey}&lang=fr`}
+      eventHandlers={{ tileerror: () => setUseFallback(true) }}
+    />
+  );
+}
+
 function createPriceIcon(price: number, color: string, dimmed = false): L.DivIcon {
   const label = price.toFixed(3).replace('.', ',').slice(0, -1); // "1,72" (2 decimals)
-  const bg = dimmed ? '#d1d5db' : color;
+  const bg = dimmed ? 'var(--color-ink-muted)' : color;
   const opacity = dimmed ? '0.5' : '1';
   return L.divIcon({
     html: `<div style="
@@ -56,7 +85,7 @@ function createPriceIcon(price: number, color: string, dimmed = false): L.DivIco
       color: white;
       font-size: 11px;
       font-weight: 700;
-      font-family: system-ui, -apple-system, sans-serif;
+      font-family: var(--font-sans);
       padding: 3px 6px;
       border-radius: 10px;
       border: 2px solid white;
@@ -167,7 +196,7 @@ function MarkerClusterGroup({
         const dimmed = hovered !== null && !childMarkers.some(
           m => (m.options as Record<string, unknown>).stationId === hovered,
         );
-        const bg = dimmed ? '#d1d5db' : color;
+        const bg = dimmed ? 'var(--color-ink-muted)' : color;
         const opacity = dimmed ? '0.5' : '1';
 
         return L.divIcon({
@@ -181,7 +210,7 @@ function MarkerClusterGroup({
             color: white;
             font-weight: 700;
             font-size: 11px;
-            font-family: system-ui, -apple-system, sans-serif;
+            font-family: var(--font-sans);
             white-space: nowrap;
             line-height: 1;
             text-align: center;
@@ -191,7 +220,7 @@ function MarkerClusterGroup({
             position: absolute;
             top: -7px;
             right: -7px;
-            background: #374151;
+            background: var(--color-ink);
             color: white;
             font-size: 9px;
             font-weight: 700;
@@ -314,10 +343,10 @@ function computeVariationHTML(
   function formatVar(change: number, refLabel: string): string {
     const absChange = Math.abs(change);
     if (absChange < 0.002) {
-      return `<span style="color:#6b7280;font-size:10px;">\u2192 stable ${refLabel}</span>`;
+      return `<span style="color:var(--color-ink-muted);font-size:10px;">\u2192 stable ${refLabel}</span>`;
     }
     const isUp = change > 0;
-    const color = isUp ? '#dc2626' : '#16a34a';
+    const color = isUp ? 'var(--color-alert)' : 'var(--color-success)';
     const arrow = isUp ? '\u2197' : '\u2198';
     const sign = isUp ? '+' : '';
     const formatted = sign + change.toFixed(3).replace('.', ',');
@@ -381,16 +410,31 @@ function renderPopupHTML(
     .map(([fuel, info]) => {
       const color = FUEL_COLORS[fuel as FuelType];
       const price = info!.p.toFixed(3).replace('.', ',');
-      return `<div style="padding:4px 0;border-bottom:1px solid #f3f4f6;">
+
+      // Stale indicator (R9): if last update > 72h ago, show warning icon
+      // + tooltip + faded price color. The popup runs in raw HTML so the
+      // tooltip uses the native `title` attribute (no custom UI lib).
+      const ageMs = Date.now() - new Date(info!.d).getTime();
+      const stale = ageMs > 72 * 60 * 60 * 1000;
+      const hoursAgo = Math.round(ageMs / (60 * 60 * 1000));
+      const priceColor = stale ? 'var(--color-ink-muted)' : 'var(--color-ink)';
+      const staleIcon = stale
+        ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-alert)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;" aria-label="Donn\u00E9e non rafra\u00EEchie depuis ${hoursAgo} h"><title>Donn\u00E9e non rafra\u00EEchie depuis ${hoursAgo} h</title><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`
+        : '';
+
+      return `<div style="padding:4px 0;border-bottom:1px solid color-mix(in srgb, var(--color-ink-muted) 20%, transparent);">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
           <span style="display:flex;align-items:center;gap:6px;">
             <span style="width:8px;height:8px;border-radius:50%;background:${color};display:inline-block;"></span>
-            <span style="font-size:13px;color:#374151;">${FUEL_LABELS[fuel as FuelType]}</span>
+            <span style="font-size:13px;color:var(--color-ink);">${FUEL_LABELS[fuel as FuelType]}</span>
           </span>
-          <span style="font-size:13px;font-weight:600;color:#111827;">${price} \u20AC</span>
+          <span style="display:flex;align-items:center;gap:5px;">
+            ${staleIcon}
+            <span style="font-size:13px;font-weight:600;color:${priceColor};">${price} \u20AC</span>
+          </span>
         </div>
         <div data-fuel-var="${fuel}" style="padding-left:14px;min-height:14px;">
-          <span style="color:#9ca3af;font-size:10px;">...</span>
+          <span style="color:var(--color-ink-muted);font-size:10px;">...</span>
         </div>
       </div>`;
     })
@@ -422,19 +466,19 @@ function renderPopupHTML(
         const { abbr, color } = getBrandDisplay(station.brand);
         return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
           <span style="background:${color};color:white;font-size:10px;font-weight:700;padding:2px 5px;border-radius:4px;line-height:1;">${abbr}</span>
-          <span style="font-size:12px;font-weight:500;color:#6b7280;">${station.brand}</span>
+          <span style="font-size:12px;font-weight:500;color:var(--color-ink-muted);">${station.brand}</span>
         </div>`;
       })()
     : '';
 
   return `
-    <div style="min-width:200px;font-family:Inter,system-ui,sans-serif;">
+    <div style="min-width:200px;font-family:var(--font-sans);">
       ${brandHTML}
-      <div style="font-weight:600;font-size:13px;color:#1f2937;margin-bottom:2px;">${station.addr}</div>
-      <div style="font-size:11px;color:#9ca3af;margin-bottom:8px;">${station.city} \u00b7 ${station.cp} \u00b7 ${distStr}</div>
+      <div style="font-weight:600;font-size:13px;color:var(--color-ink);margin-bottom:2px;">${station.addr}</div>
+      <div style="font-size:11px;color:var(--color-ink-muted);margin-bottom:8px;">${station.city} \u00b7 ${station.cp} \u00b7 ${distStr}</div>
       ${fuels}
       <a href="${navUrl}" target="_blank" rel="noopener noreferrer"
-         style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:10px;padding:7px 0;background:#3b82f6;color:white;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none;cursor:pointer;">
+         style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:10px;padding:7px 0;background:var(--color-primary);color:white;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none;cursor:pointer;">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
         </svg>
@@ -453,7 +497,7 @@ function SearchRadiusCircle({
 }) {
   const map = useMap();
   const circleRef = useRef<L.Circle | null>(null);
-  const markerRef = useRef<L.CircleMarker | null>(null);
+  const markerRef = useRef<L.Marker | null>(null);
 
   useEffect(() => {
     // Clean previous
@@ -471,28 +515,42 @@ function SearchRadiusCircle({
     // Radius circle
     const circle = L.circle(center, {
       radius: radiusKm * 1000,
-      color: '#3b82f6',
+      color: '#171717',
       weight: 2,
       opacity: 0.4,
-      fillColor: '#3b82f6',
+      fillColor: '#171717',
       fillOpacity: 0.06,
       interactive: false,
     });
     circle.addTo(map);
     circleRef.current = circle;
 
-    // Center dot
-    const dot = L.circleMarker(center, {
-      radius: 7,
-      color: '#3b82f6',
-      weight: 3,
-      opacity: 0.9,
-      fillColor: '#ffffff',
-      fillOpacity: 1,
-      interactive: false,
+    // Center marker — bleu pétrole (sky-900) top-down car silhouette.
+    // Picked because: automotive/fuel-themed (pétrole), distinct from
+    // the FUEL_COLORS palette (no marker conflict), and distinct from
+    // --color-primary charcoal so it stands apart from UI chrome.
+    // Drop shadow lifts the SVG off the pale CARTO basemap.
+    const carIcon = L.divIcon({
+      html: `
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="#0c4a6e"
+             style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));">
+          <!-- car body (top-down silhouette) -->
+          <rect x="6" y="2" width="12" height="20" rx="3" />
+          <!-- side mirrors -->
+          <rect x="4" y="7" width="2" height="2" rx="0.5" />
+          <rect x="18" y="7" width="2" height="2" rx="0.5" />
+          <!-- windshield (front) -->
+          <rect x="8" y="5" width="8" height="4" rx="1" fill="white" opacity="0.65" />
+          <!-- rear window -->
+          <rect x="8" y="15" width="8" height="4" rx="1" fill="white" opacity="0.65" />
+        </svg>`,
+      className: '',
+      iconSize: [32, 32],
+      iconAnchor: [16, 16],
     });
-    dot.addTo(map);
-    markerRef.current = dot;
+    const marker = L.marker(center, { icon: carIcon, interactive: false });
+    marker.addTo(map);
+    markerRef.current = marker;
 
     return () => {
       if (circleRef.current) map.removeLayer(circleRef.current);
@@ -506,7 +564,10 @@ function SearchRadiusCircle({
 function BoundsTracker({ onChange }: { onChange: (bounds: L.LatLngBounds) => void }) {
   const map = useMap();
   const onChangeRef = useRef(onChange);
-  onChangeRef.current = onChange;
+
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
 
   useEffect(() => {
     const handler = () => {
@@ -558,10 +619,7 @@ export function MapView({
         ]}
         maxBoundsViscosity={1.0}
       >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
-          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-        />
+        <BaseTileLayer />
         <MapUpdater center={center} zoom={zoom} bounds={bounds} />
         <BoundsTracker onChange={onVisibleBoundsChange} />
         <SearchRadiusCircle center={searchCenter} radiusKm={searchRadius} />
@@ -581,16 +639,17 @@ export function MapView({
         <button
           onClick={onGeolocate}
           disabled={geolocating}
+          aria-label={geolocating ? 'Localisation en cours' : 'Me localiser'}
           className={`absolute right-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-lg ring-1 ring-gray-200 transition-all hover:bg-gray-50 disabled:opacity-60 md:bottom-6 ${hasPanel ? `${panelOpen ? 'bottom-[340px]' : 'bottom-16'} md:right-[300px]` : 'bottom-20'}`}
           title="Me localiser"
         >
           {geolocating ? (
-            <svg className="h-5 w-5 animate-spin text-blue-500" viewBox="0 0 24 24" fill="none">
+            <svg className="h-5 w-5 animate-spin text-primary" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
           ) : (
-            <svg className="h-5 w-5 text-gray-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg className="h-5 w-5 text-gray-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <circle cx="12" cy="12" r="3" />
               <path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
             </svg>

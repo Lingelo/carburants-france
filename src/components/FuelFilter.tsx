@@ -1,3 +1,4 @@
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import type { FuelType } from '../types';
 import { ALL_FUELS, FUEL_COLORS, FUEL_LABELS } from '../utils/fuel';
 
@@ -6,26 +7,40 @@ interface Props {
   onChange: (fuel: FuelType) => void;
 }
 
+// Visual language aligned with the PriceHistoryModal fuel toggles:
+// active = tint fill (FUEL_COLOR @ 12.5%) + colored text + colored
+// border + colored dot. Inactive = neutral grey. Single-select behavior
+// preserved (radio-group semantics from shadcn ToggleGroup type=single).
 export function FuelFilter({ selected, onChange }: Props) {
   return (
-    <div className="flex gap-1 overflow-x-auto">
+    <ToggleGroup
+      type="single"
+      value={selected}
+      onValueChange={(v) => v && onChange(v as FuelType)}
+      aria-label="Filtrer par carburant"
+      className="flex gap-1 overflow-x-auto"
+    >
       {ALL_FUELS.map((fuel) => {
         const isActive = fuel === selected;
+        const color = FUEL_COLORS[fuel];
         return (
-          <button
+          <ToggleGroupItem
             key={fuel}
-            onClick={() => onChange(fuel)}
-            className={`whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
-              isActive
-                ? 'text-white shadow-sm'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-            style={isActive ? { backgroundColor: FUEL_COLORS[fuel] } : undefined}
+            value={fuel}
+            className="flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium transition-all data-[state=off]:bg-gray-100 data-[state=off]:text-gray-500 data-[state=off]:hover:bg-gray-200"
+            style={isActive ? {
+              backgroundColor: color + '20',
+              color,
+            } : undefined}
           >
+            <span
+              className="h-2 w-2 rounded-full"
+              style={{ backgroundColor: isActive ? color : '#d1d5db' }}
+            />
             {FUEL_LABELS[fuel]}
-          </button>
+          </ToggleGroupItem>
         );
       })}
-    </div>
+    </ToggleGroup>
   );
 }
