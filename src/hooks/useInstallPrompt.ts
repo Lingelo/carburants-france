@@ -23,8 +23,11 @@ export function useInstallPrompt() {
     const prompt = state.capturedPrompt;
     if (prompt) {
       // Calling prompt() consumes the event; the saved reference cannot be reused.
-      prompt
-        .prompt()
+      // Wrap in Promise.resolve().then(...) so a synchronous throw from prompt()
+      // (older browsers, polyfills) is caught by the same .catch path as async
+      // rejections.
+      Promise.resolve()
+        .then(() => prompt.prompt())
         .then(() => prompt.userChoice)
         .then(({ outcome }) => {
           if (outcome === 'accepted') {

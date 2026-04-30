@@ -24,7 +24,9 @@ window.addEventListener('appinstalled', () => {
 });
 
 window.addEventListener('storage', (e) => {
-  if (e.key === 'pwa_installed' && e.newValue === '1') {
+  // Re-sync on any change to the install flag (set or clear) — the value
+  // check happens inside syncFromStorage by re-reading localStorage.
+  if (e.key === 'pwa_installed') {
     syncFromStorage();
   }
 });

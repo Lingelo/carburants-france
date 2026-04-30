@@ -46,7 +46,15 @@ const listeners = new Set<() => void>();
 
 function notify(next: InstallStateSnapshot): void {
   snapshot = next;
-  listeners.forEach((cb) => cb());
+  // Wrap each callback so a throwing subscriber doesn't prevent later subscribers
+  // from receiving the update.
+  listeners.forEach((cb) => {
+    try {
+      cb();
+    } catch (err) {
+      console.error('install-state subscriber failed', err);
+    }
+  });
 }
 
 export function getInstallState(): InstallStateSnapshot {

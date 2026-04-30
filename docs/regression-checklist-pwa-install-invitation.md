@@ -46,6 +46,7 @@ For each platform below, run the full sub-checklist. Record screenshots of the w
 - [ ] Click triggers the native install prompt on Chrome desktop (when installability criteria + engagement are met)
 - [ ] Prompt → "Cancel": the link stays visible, a second click opens the **modal** (fallback to generic copy after consume)
 - [ ] Prompt → "Install": the link disappears immediately, `localStorage.pwa_installed === '1'`, `localStorage.pwa_install_accepted` incremented
+- [ ] Prompt error fallback: in DevTools console, run `localStorage.clear()` then dispatch a synthetic `beforeinstallprompt` whose `prompt()` throws (`Object.defineProperty(e, 'prompt', { value: () => { throw new Error('boom'); } })`); click the link → the modal opens with the `'generic'` copy, no console error visible to the user
 - [ ] Cross-tab install: open app in two tabs, install from tab A, switch to tab B without reload — the link disappears within ~1s
 - [ ] Visibility-change re-check: with the app installed in another window, background the current tab, then bring it back — the link is no longer shown (sync from storage on visibility)
 - [ ] Selecting a city makes the welcome overlay (and the link) disappear; selecting a fuel works as before — no regression
@@ -64,6 +65,7 @@ For each platform below, run the full sub-checklist. Record screenshots of the w
 - [ ] **Fermer** button (French) closes the modal — Escape and tap on the scrim also work
 - [ ] Modal animation uses Radix defaults; no jank
 - [ ] After manual Add-to-Home-Screen install, opening the app from the home screen launches in standalone mode → welcome overlay no longer shows the link
+- [ ] **Private browsing**: open the app in Safari Private Browsing → welcome overlay renders, no console errors, the install link appears (localStorage read returns `false`), clicking it opens the modal, closing the modal works without crashing
 
 ### 3.4 In-app WebView (Facebook / Instagram / Gmail)
 

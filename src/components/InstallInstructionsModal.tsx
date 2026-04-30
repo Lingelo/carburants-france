@@ -54,9 +54,10 @@ function ModalBody({ context }: { context: InstallContext }) {
     case 'generic':
     case 'native-prompt':
     default:
-      // 'native-prompt' should normally trigger prompt() instead of opening the
-      // modal; if we end up here it's because prompt() was unavailable or
-      // failed, so we fall through to generic instructions.
+      // 'native-prompt' is structurally unreachable here: handleInviteClick calls
+      // prompt() instead of opening the modal when a prompt is captured. We list
+      // it for exhaustiveness so a future enum addition fails type-checking
+      // rather than silently falling through.
       return (
         <p>
           Utilisez le menu de votre navigateur (icône d'installation dans la
