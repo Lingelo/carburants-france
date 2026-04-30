@@ -25,9 +25,16 @@ export function useMapView() {
     setView({ center: [lat, lng], zoom: FRANCE_ZOOM, bounds });
   }, []);
 
+  const flyToStation = useCallback((lat: number, lng: number) => {
+    // Tighter than flyToCity — center precisely on the marker, zoom in
+    const center = L.latLng(lat, lng);
+    const bounds = center.toBounds(800); // 800m diameter = street level
+    setView({ center: [lat, lng], zoom: FRANCE_ZOOM, bounds });
+  }, []);
+
   const resetView = useCallback(() => {
     setView({ center: FRANCE_CENTER, zoom: FRANCE_ZOOM, bounds: null });
   }, []);
 
-  return { ...view, flyToCity, resetView };
+  return { ...view, flyToCity, flyToStation, resetView };
 }

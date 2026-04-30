@@ -7,12 +7,13 @@ interface Props {
   results: CityResult[];
   loading: boolean;
   error?: 'network' | null;
+  searched?: boolean;
   onRetry?: () => void;
   onSelect: (city: CityResult) => void;
   onClear: () => void;
 }
 
-export function SearchBar({ query, onSearch, results, loading, error, onRetry, onSelect, onClear }: Props) {
+export function SearchBar({ query, onSearch, results, loading, error, searched, onRetry, onSelect, onClear }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [highlightIndex, setHighlightIndex] = useState(-1);
@@ -110,7 +111,7 @@ export function SearchBar({ query, onSearch, results, loading, error, onRetry, o
         )}
       </div>
 
-      {query.length >= 2 && (loading || results.length > 0 || error || (!loading && results.length === 0)) && (
+      {query.length >= 2 && (loading || results.length > 0 || error || (searched && !loading && results.length === 0)) && (
         <div
           ref={dropdownRef}
           className="absolute top-full z-[1100] mt-1 max-h-60 w-full overflow-y-auto rounded-xl bg-white shadow-xl ring-1 ring-gray-200"

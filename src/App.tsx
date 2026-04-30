@@ -24,9 +24,9 @@ interface StationWithDistance extends Station {
 }
 
 export default function App() {
-  const { query, search, results, loading: searchLoading, error: searchError, retry: searchRetry, setResults, setQuery } = useCitySearch();
+  const { query, search, results, loading: searchLoading, error: searchError, searched: searchSearched, retry: searchRetry, setResults, setQuery } = useCitySearch();
   const { stations, loading: stationsLoading, error, meta, loadDepartments, resetStations } = useStations();
-  const { center, zoom, bounds, flyToCity } = useMapView();
+  const { center, zoom, bounds, flyToCity, flyToStation } = useMapView();
 
   const [selectedFuel, setSelectedFuel] = useState<FuelType>('Gazole');
   const [selectedCity, setSelectedCity] = useState<CityResult | null>(null);
@@ -80,7 +80,8 @@ export default function App() {
 
   const handleStationClick = useCallback((station: StationWithDistance) => {
     setSelectedStationId(station.id);
-  }, []);
+    flyToStation(station.lat, station.lng);
+  }, [flyToStation]);
 
   const handleClear = useCallback(() => {
     setResults([]);
@@ -218,6 +219,7 @@ export default function App() {
             results={results}
             loading={searchLoading}
             error={searchError}
+            searched={searchSearched}
             onRetry={searchRetry}
             onSelect={handleCitySelect}
             onClear={handleClear}
