@@ -497,7 +497,7 @@ function SearchRadiusCircle({
 }) {
   const map = useMap();
   const circleRef = useRef<L.Circle | null>(null);
-  const markerRef = useRef<L.CircleMarker | null>(null);
+  const markerRef = useRef<L.Marker | null>(null);
 
   useEffect(() => {
     // Clean previous
@@ -525,18 +525,35 @@ function SearchRadiusCircle({
     circle.addTo(map);
     circleRef.current = circle;
 
-    // Center dot
-    const dot = L.circleMarker(center, {
-      radius: 7,
-      color: '#171717',
-      weight: 3,
-      opacity: 0.9,
-      fillColor: '#ffffff',
-      fillOpacity: 1,
-      interactive: false,
+    // Center marker — car icon in a circular white badge
+    const carIcon = L.divIcon({
+      html: `
+        <div style="
+          background: white;
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          border: 2px solid #171717;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        ">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+               stroke="#171717" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9L18 10l-2.7-3.6A2 2 0 0013.7 5H6.3a2 2 0 00-1.6.9L2 9.5 1.5 11C.7 11.3 0 12.1 0 13v3c0 .6.4 1 1 1h2"/>
+            <circle cx="7" cy="17" r="2"/>
+            <circle cx="17" cy="17" r="2"/>
+          </svg>
+        </div>`,
+      className: '',
+      iconSize: [36, 36],
+      iconAnchor: [18, 18],
     });
-    dot.addTo(map);
-    markerRef.current = dot;
+    const marker = L.marker(center, { icon: carIcon, interactive: false });
+    marker.addTo(map);
+    markerRef.current = marker;
 
     return () => {
       if (circleRef.current) map.removeLayer(circleRef.current);
