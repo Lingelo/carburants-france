@@ -10,6 +10,7 @@
     "history:daily": "node scripts/generate-history.mjs --daily",
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:full": "npm run data && npm run build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
