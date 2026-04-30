@@ -72,7 +72,7 @@ function BaseTileLayer() {
 
 function createPriceIcon(price: number, color: string, dimmed = false): L.DivIcon {
   const label = price.toFixed(3).replace('.', ',').slice(0, -1); // "1,72" (2 decimals)
-  const bg = dimmed ? '#d1d5db' : color;
+  const bg = dimmed ? 'var(--color-ink-muted)' : color;
   const opacity = dimmed ? '0.5' : '1';
   return L.divIcon({
     html: `<div style="
@@ -80,7 +80,7 @@ function createPriceIcon(price: number, color: string, dimmed = false): L.DivIco
       color: white;
       font-size: 11px;
       font-weight: 700;
-      font-family: system-ui, -apple-system, sans-serif;
+      font-family: var(--font-sans);
       padding: 3px 6px;
       border-radius: 10px;
       border: 2px solid white;
@@ -191,7 +191,7 @@ function MarkerClusterGroup({
         const dimmed = hovered !== null && !childMarkers.some(
           m => (m.options as Record<string, unknown>).stationId === hovered,
         );
-        const bg = dimmed ? '#d1d5db' : color;
+        const bg = dimmed ? 'var(--color-ink-muted)' : color;
         const opacity = dimmed ? '0.5' : '1';
 
         return L.divIcon({
@@ -205,7 +205,7 @@ function MarkerClusterGroup({
             color: white;
             font-weight: 700;
             font-size: 11px;
-            font-family: system-ui, -apple-system, sans-serif;
+            font-family: var(--font-sans);
             white-space: nowrap;
             line-height: 1;
             text-align: center;
@@ -215,7 +215,7 @@ function MarkerClusterGroup({
             position: absolute;
             top: -7px;
             right: -7px;
-            background: #374151;
+            background: var(--color-ink);
             color: white;
             font-size: 9px;
             font-weight: 700;
@@ -338,10 +338,10 @@ function computeVariationHTML(
   function formatVar(change: number, refLabel: string): string {
     const absChange = Math.abs(change);
     if (absChange < 0.002) {
-      return `<span style="color:#6b7280;font-size:10px;">\u2192 stable ${refLabel}</span>`;
+      return `<span style="color:var(--color-ink-muted);font-size:10px;">\u2192 stable ${refLabel}</span>`;
     }
     const isUp = change > 0;
-    const color = isUp ? '#dc2626' : '#16a34a';
+    const color = isUp ? 'var(--color-alert)' : 'var(--color-success)';
     const arrow = isUp ? '\u2197' : '\u2198';
     const sign = isUp ? '+' : '';
     const formatted = sign + change.toFixed(3).replace('.', ',');
@@ -405,16 +405,16 @@ function renderPopupHTML(
     .map(([fuel, info]) => {
       const color = FUEL_COLORS[fuel as FuelType];
       const price = info!.p.toFixed(3).replace('.', ',');
-      return `<div style="padding:4px 0;border-bottom:1px solid #f3f4f6;">
+      return `<div style="padding:4px 0;border-bottom:1px solid color-mix(in srgb, var(--color-ink-muted) 20%, transparent);">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
           <span style="display:flex;align-items:center;gap:6px;">
             <span style="width:8px;height:8px;border-radius:50%;background:${color};display:inline-block;"></span>
-            <span style="font-size:13px;color:#374151;">${FUEL_LABELS[fuel as FuelType]}</span>
+            <span style="font-size:13px;color:var(--color-ink);">${FUEL_LABELS[fuel as FuelType]}</span>
           </span>
-          <span style="font-size:13px;font-weight:600;color:#111827;">${price} \u20AC</span>
+          <span style="font-size:13px;font-weight:600;color:var(--color-ink);">${price} \u20AC</span>
         </div>
         <div data-fuel-var="${fuel}" style="padding-left:14px;min-height:14px;">
-          <span style="color:#9ca3af;font-size:10px;">...</span>
+          <span style="color:var(--color-ink-muted);font-size:10px;">...</span>
         </div>
       </div>`;
     })
@@ -446,16 +446,16 @@ function renderPopupHTML(
         const { abbr, color } = getBrandDisplay(station.brand);
         return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
           <span style="background:${color};color:white;font-size:10px;font-weight:700;padding:2px 5px;border-radius:4px;line-height:1;">${abbr}</span>
-          <span style="font-size:12px;font-weight:500;color:#6b7280;">${station.brand}</span>
+          <span style="font-size:12px;font-weight:500;color:var(--color-ink-muted);">${station.brand}</span>
         </div>`;
       })()
     : '';
 
   return `
-    <div style="min-width:200px;font-family:Inter,system-ui,sans-serif;">
+    <div style="min-width:200px;font-family:var(--font-sans);">
       ${brandHTML}
-      <div style="font-weight:600;font-size:13px;color:#1f2937;margin-bottom:2px;">${station.addr}</div>
-      <div style="font-size:11px;color:#9ca3af;margin-bottom:8px;">${station.city} \u00b7 ${station.cp} \u00b7 ${distStr}</div>
+      <div style="font-weight:600;font-size:13px;color:var(--color-ink);margin-bottom:2px;">${station.addr}</div>
+      <div style="font-size:11px;color:var(--color-ink-muted);margin-bottom:8px;">${station.city} \u00b7 ${station.cp} \u00b7 ${distStr}</div>
       ${fuels}
       <a href="${navUrl}" target="_blank" rel="noopener noreferrer"
          style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:10px;padding:7px 0;background:var(--color-primary);color:white;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none;cursor:pointer;">
