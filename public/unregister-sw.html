@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <title>Réinitialisation — Carburants France</title>
+    <style>
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: #ffffff;
+        color: #171717;
+        display: grid;
+        place-items: center;
+        min-height: 100vh;
+        margin: 0;
+        padding: 1rem;
+      }
+      main {
+        max-width: 24rem;
+        text-align: center;
+      }
+      h1 {
+        font-size: 1.125rem;
+        margin: 0 0 0.5rem;
+      }
+      p {
+        font-size: 0.875rem;
+        color: #525252;
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Réinitialisation du service worker…</h1>
+      <p>Vous serez redirigé automatiquement.</p>
+    </main>
+    <script>
+      (async () => {
+        try {
+          if ('serviceWorker' in navigator) {
+            const regs = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(regs.map((r) => r.unregister()));
+          }
+          if ('caches' in window) {
+            const keys = await caches.keys();
+            await Promise.all(keys.map((k) => caches.delete(k)));
+          }
+        } catch (e) {
+          console.error('unregister-sw failed', e);
+        }
+        setTimeout(() => location.replace('/carburants-france/'), 500);
+      })();
+    </script>
+  </body>
+</html>

@@ -33,3 +33,6 @@ public/data/
 # Environment
 .env
 .env.local
+
+# Compound-engineering scratch artifacts
+.context/
