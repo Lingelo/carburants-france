@@ -510,10 +510,10 @@ function SearchRadiusCircle({
     // Radius circle
     const circle = L.circle(center, {
       radius: radiusKm * 1000,
-      color: '#000091',
+      color: '#171717',
       weight: 2,
       opacity: 0.4,
-      fillColor: '#000091',
+      fillColor: '#171717',
       fillOpacity: 0.06,
       interactive: false,
     });
@@ -523,7 +523,7 @@ function SearchRadiusCircle({
     // Center dot
     const dot = L.circleMarker(center, {
       radius: 7,
-      color: '#000091',
+      color: '#171717',
       weight: 3,
       opacity: 0.9,
       fillColor: '#ffffff',

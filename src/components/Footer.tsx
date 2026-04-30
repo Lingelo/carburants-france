@@ -38,8 +38,6 @@ export function Footer({ onShowAbout, onShowHistory, lastUpdate, hasCity }: Prop
           <span>MAJ {timeAgo(lastUpdate)}</span>
         </>
       )}
-      <span className="text-gray-300">·</span>
-      <span className="italic text-gray-400">Site indépendant — non affilié à l'État français</span>
     </footer>
   );
 }
