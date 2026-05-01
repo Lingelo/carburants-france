@@ -238,6 +238,8 @@ export function MapScreen() {
   const sheetExpanded = sheetState === 'expanded';
   const sheetHidden = sheetState === 'hidden';
   const [pendingFocusId, setPendingFocusId] = useState<number | null>(null);
+  const [locationDenied, setLocationDenied] = useState(false);
+  const [locating, setLocating] = useState(false);
   const sidePanelRef = useRef<HTMLDivElement>(null);
 
   // On mount, pick up any focus-station id passed by the previous screen.
@@ -310,8 +312,18 @@ export function MapScreen() {
   }, [f.selectedFuel, f.selectedBrands, f.radiusKm, f.userLocation, bounds]);
 
   const onLocateMe = async () => {
-    const c = await getBrowserLocation();
-    if (c) f.setUserLocation(c);
+    setLocating(true);
+    try {
+      const { coords, denied } = await getBrowserLocation();
+      if (coords) {
+        f.setUserLocation(coords);
+        setLocationDenied(false);
+      } else {
+        setLocationDenied(denied);
+      }
+    } finally {
+      setLocating(false);
+    }
   };
 
   const popupStation = popupId !== null ? priced.find((p) => p.station.id === popupId) : null;
@@ -348,11 +360,25 @@ export function MapScreen() {
             </div>
             <button
               onClick={onLocateMe}
-              className="bg-primary text-on-primary px-6 py-3 rounded-xl text-body-lg font-semibold flex items-center gap-2 active:scale-95 transition-transform shadow-md"
+              disabled={locating}
+              className="bg-primary text-on-primary px-6 py-3 rounded-xl text-body-lg font-semibold flex items-center gap-2 active:scale-95 transition-transform shadow-md disabled:opacity-70"
             >
-              <Icon name="my_location" filled size={20} />
-              Utiliser ma position
+              <Icon name={locating ? 'sync' : 'my_location'} filled size={20} />
+              {locating
+                ? 'Localisation…'
+                : locationDenied
+                  ? 'Réessayer la localisation'
+                  : 'Utiliser ma position'}
             </button>
+            {locationDenied && (
+              <p className="text-body-sm text-error max-w-md flex items-start gap-2 -mt-2">
+                <Icon name="info" size={16} />
+                <span>
+                  L'accès à la localisation a été refusé. Autorise-la dans les réglages
+                  de ton navigateur, puis appuie à nouveau sur le bouton.
+                </span>
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -454,15 +480,58 @@ export function MapScreen() {
 
       <button
         onClick={onLocateMe}
+        disabled={locating}
         className={[
-          'absolute right-4 md:bottom-6 bg-surface-container-lowest text-primary p-md rounded-full shadow-[0_4px_12px_rgba(20,27,43,0.15)] active:scale-95 transition-all z-[400] flex items-center justify-center border border-outline-variant',
+          'absolute right-4 md:bottom-6 p-md rounded-full shadow-[0_4px_12px_rgba(20,27,43,0.15)] active:scale-95 transition-all z-[400] flex items-center justify-center border',
+          locationDenied
+            ? 'bg-error-container text-on-error-container border-error'
+            : 'bg-surface-container-lowest text-primary border-outline-variant',
           sheetExpanded ? 'bottom-[60vh]' : sheetHidden ? 'bottom-24' : 'bottom-48',
           panelOpen ? 'md:right-[396px]' : 'md:right-4',
         ].join(' ')}
-        aria-label="Me localiser"
+        aria-label={
+          locationDenied
+            ? 'Localisation refusée — réessayer'
+            : locating
+              ? 'Localisation en cours'
+              : 'Me localiser'
+        }
+        title={
+          locationDenied
+            ? 'Localisation refusée. Autorise-la dans ton navigateur puis réessaye.'
+            : 'Me localiser'
+        }
       >
-        <Icon name="my_location" filled />
+        <Icon
+          name={locating ? 'sync' : locationDenied ? 'location_disabled' : 'my_location'}
+          filled
+        />
+        {locationDenied && (
+          <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-error border-2 border-surface-container-lowest" />
+        )}
       </button>
+      {locationDenied && (
+        <div
+          role="status"
+          aria-live="polite"
+          className={[
+            'absolute right-4 z-[400] max-w-[280px] bg-error-container text-on-error-container px-3 py-2 rounded-lg shadow-[0_4px_12px_rgba(20,27,43,0.18)] border border-error text-body-sm flex items-start gap-2',
+            sheetExpanded
+              ? 'bottom-[calc(60vh+72px)]'
+              : sheetHidden
+                ? 'bottom-[140px]'
+                : 'bottom-[260px]',
+            panelOpen ? 'md:right-[396px]' : 'md:right-4',
+            'md:bottom-24',
+          ].join(' ')}
+        >
+          <Icon name="info" size={16} />
+          <span>
+            Localisation refusée. Autorise-la dans ton navigateur puis touche à
+            nouveau le bouton.
+          </span>
+        </div>
+      )}
 
       {/* Mobile: floating pill to re-open the sheet when fully hidden */}
       {sheetHidden && (

@@ -34,7 +34,7 @@ function Bootstrap() {
       // user lands on a fresh position. The FiltersProvider already seeds
       // userLocation with the last-known persisted value at boot, so the
       // UI never starts blank — it just gets refined when GPS resolves.
-      const coords = await getBrowserLocation();
+      const { coords } = await getBrowserLocation();
       if (cancelled) return;
       if (!coords) {
         // Geolocation refused or unavailable. We don't fall back to a

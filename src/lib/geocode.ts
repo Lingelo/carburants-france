@@ -54,13 +54,25 @@ export async function reverseGeocode(coords: Coords): Promise<AddressResult | nu
   };
 }
 
-/** Browser geolocation as a Promise. Falls back silently. */
-export function getBrowserLocation(): Promise<Coords | null> {
+export type LocationResult =
+  | { coords: Coords; denied: false }
+  | { coords: null; denied: boolean };
+
+/** Browser geolocation as a Promise. Surfaces whether the user denied access. */
+export function getBrowserLocation(): Promise<LocationResult> {
   return new Promise((resolve) => {
-    if (!('geolocation' in navigator)) return resolve(null);
+    if (!('geolocation' in navigator)) return resolve({ coords: null, denied: false });
     navigator.geolocation.getCurrentPosition(
-      (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => resolve(null),
+      (pos) =>
+        resolve({
+          coords: { lat: pos.coords.latitude, lng: pos.coords.longitude },
+          denied: false,
+        }),
+      (err) =>
+        resolve({
+          coords: null,
+          denied: err.code === err.PERMISSION_DENIED,
+        }),
       { enableHighAccuracy: false, maximumAge: 5 * 60 * 1000, timeout: 10_000 },
     );
   });
