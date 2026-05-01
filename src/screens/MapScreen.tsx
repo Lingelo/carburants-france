@@ -358,7 +358,7 @@ export function MapScreen() {
       </MapContainer>
 
       {/* Search overlay */}
-      <div className="absolute top-md left-container-margin right-container-margin md:w-[420px] md:left-4 md:right-auto z-[400] flex flex-col gap-2">
+      <div className="absolute top-3 left-3 right-3 md:w-[420px] md:left-4 md:right-auto z-[400] flex flex-col gap-2">
         <SearchBar
           initialLabel={f.searchLabel}
           onResult={(r) => {
