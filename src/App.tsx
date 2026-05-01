@@ -5,6 +5,7 @@ import { FavoritesProvider } from './state/FavoritesContext';
 import { SettingsProvider, useSettings } from './state/SettingsContext';
 import { TopAppBar } from './components/TopAppBar';
 import { BottomNavBar } from './components/BottomNavBar';
+import { UpdateBanner } from './components/UpdateBanner';
 import { MapScreen } from './screens/MapScreen';
 import { StationsScreen } from './screens/StationsScreen';
 import { StationDetailScreen } from './screens/StationDetailScreen';
@@ -14,7 +15,7 @@ import { SettingsScreen } from './screens/SettingsScreen';
 import { getBrowserLocation, reverseGeocode } from './lib/geocode';
 
 function Bootstrap() {
-  const { userLocation, setUserLocation, setSearchLabel } = useFilters();
+  const { setUserLocation, setSearchLabel } = useFilters();
   const settings = useSettings();
   const nav = useViewNav();
 
@@ -27,26 +28,34 @@ function Bootstrap() {
   }, []);
 
   useEffect(() => {
-    if (userLocation) return;
     let cancelled = false;
     (async () => {
+      // Always re-query the browser geolocation in the background so the
+      // user lands on a fresh position. The FiltersProvider already seeds
+      // userLocation with the last-known persisted value at boot, so the
+      // UI never starts blank — it just gets refined when GPS resolves.
       const coords = await getBrowserLocation();
       if (cancelled) return;
-      if (coords) {
-        setUserLocation(coords);
-        const addr = await reverseGeocode(coords);
-        if (cancelled) return;
-        if (addr) setSearchLabel(`${addr.postcode} ${addr.city}`);
-        else setSearchLabel(`${coords.lat.toFixed(3)}, ${coords.lng.toFixed(3)}`);
-      } else {
-        setUserLocation({ lat: 48.8566, lng: 2.3522 });
-        setSearchLabel('Paris');
+      if (!coords) {
+        // Geolocation refused or unavailable. We don't fall back to a
+        // hard-coded city anymore — let the UI surface a welcome screen
+        // that asks the user to type an address instead.
+        return;
       }
+      const addr = await reverseGeocode(coords);
+      if (cancelled) return;
+      const label = addr
+        ? `${addr.postcode} ${addr.city}`
+        : `${coords.lat.toFixed(3)}, ${coords.lng.toFixed(3)}`;
+      setUserLocation(coords);
+      setSearchLabel(label);
     })();
     return () => {
       cancelled = true;
     };
-  }, [userLocation, setUserLocation, setSearchLabel]);
+    // Run exactly once on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return null;
 }
@@ -82,6 +91,7 @@ export function App() {
                 <Router />
               </main>
               <BottomNavBar />
+              <UpdateBanner />
             </div>
           </ViewProvider>
         </FiltersProvider>

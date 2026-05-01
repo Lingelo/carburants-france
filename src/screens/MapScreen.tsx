@@ -318,8 +318,36 @@ export function MapScreen() {
 
   if (!f.userLocation) {
     return (
-      <div className="h-full flex items-center justify-center text-on-surface-variant">
-        <p>Localisation…</p>
+      <div className="h-full flex items-start justify-center bg-background">
+        <div className="w-full max-w-md mx-auto px-4 pt-12 pb-6 flex flex-col items-center gap-5 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-primary text-on-primary flex items-center justify-center shadow-lg">
+            <Icon name="location_searching" size={36} />
+          </div>
+          <div>
+            <h2 className="text-headline-lg font-semibold text-on-surface">
+              Où cherches-tu ?
+            </h2>
+            <p className="text-body-sm text-on-surface-variant mt-1">
+              Saisis ta ville ou ton code postal, ou autorise la géolocalisation pour voir les prix carburants autour de toi.
+            </p>
+          </div>
+          <div className="w-full">
+            <SearchBar
+              initialLabel={null}
+              onResult={(r) => {
+                f.setUserLocation({ lat: r.lat, lng: r.lng });
+                f.setSearchLabel(`${r.postcode} ${r.city}`);
+              }}
+            />
+          </div>
+          <button
+            onClick={onLocateMe}
+            className="bg-surface-container-lowest border border-outline-variant text-primary px-4 py-2 rounded-full text-body-sm font-semibold flex items-center gap-2 active:scale-95 transition-transform"
+          >
+            <Icon name="my_location" filled size={18} />
+            Utiliser ma position
+          </button>
+        </div>
       </div>
     );
   }

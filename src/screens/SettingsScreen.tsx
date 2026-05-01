@@ -3,17 +3,28 @@ import { useSettings } from '../state/SettingsContext';
 import { useFilters } from '../state/FiltersContext';
 import { fetchMeta, timeAgo } from '../lib/data';
 import { getBrowserLocation, reverseGeocode } from '../lib/geocode';
+import { useForegroundRefresh } from '../hooks/useForegroundRefresh';
 import { Icon } from '../components/Icon';
 
 export function SettingsScreen() {
   const s = useSettings();
   const f = useFilters();
+  const foregroundVersion = useForegroundRefresh();
   const [lastUpdate, setLastUpdate] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Re-fetch meta every mount + every time the app returns to foreground.
+  // useForegroundRefresh() also calls invalidateStations() which resets
+  // the in-memory metaPromise, so this fetch goes back to the network.
   useEffect(() => {
-    fetchMeta().then((m) => m && setLastUpdate(m.lastUpdate));
-  }, []);
+    let cancelled = false;
+    fetchMeta().then((m) => {
+      if (!cancelled && m) setLastUpdate(m.lastUpdate);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [foregroundVersion]);
 
   const refreshLocation = async () => {
     setRefreshing(true);
