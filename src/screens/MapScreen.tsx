@@ -336,7 +336,7 @@ export function MapScreen() {
             <div className="w-20 h-20 rounded-2xl bg-primary text-on-primary flex items-center justify-center shadow-lg shrink-0">
               <Icon name="location_searching" size={44} />
             </div>
-            <div className="space-y-2 max-w-md">
+            <div className="space-y-2 w-full max-w-md">
               <h2 className="text-headline-lg font-semibold text-on-surface">
                 Où cherches-tu ?
               </h2>
@@ -371,7 +371,7 @@ export function MapScreen() {
                   : 'Utiliser ma position'}
             </button>
             {locationDenied && (
-              <p className="text-body-sm text-error max-w-md flex items-start gap-2 -mt-2">
+              <p className="text-body-sm text-error w-full max-w-md flex items-start gap-2 -mt-2">
                 <Icon name="info" size={16} />
                 <span>
                   L'accès à la localisation a été refusé. Autorise-la dans les réglages
