@@ -14,9 +14,7 @@ export default defineConfig(({ command }) => ({
     react(),
     tailwindcss(),
     VitePWA({
-      // 'prompt' lets us surface a "Recharger" button when a new SW is
-      // ready, instead of silently swapping at the next launch.
-      registerType: 'prompt',
+      registerType: 'autoUpdate',
       includeAssets: ['icon.svg', 'icon-192.png.svg'],
       manifest: {
         name: 'Carburants France',

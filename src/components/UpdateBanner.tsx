@@ -3,9 +3,11 @@ import { registerSW } from 'virtual:pwa-register';
 import { Icon } from './Icon';
 
 /**
- * Listens to vite-plugin-pwa's service-worker hooks and shows a small
- * toast/button when a new build is ready. Tapping the button calls
- * updateSW() which forces the new SW to take over and reloads the page.
+ * In `autoUpdate` mode, vite-plugin-pwa swaps the service worker as
+ * soon as the new build is ready. We still listen to onNeedRefresh so we
+ * can show a brief, non-blocking toast inviting the user to reload —
+ * the swap itself is automatic, the reload is offered to apply the new
+ * code immediately rather than at the next manual reopen.
  */
 export function UpdateBanner() {
   const [needRefresh, setNeedRefresh] = useState(false);
@@ -13,6 +15,7 @@ export function UpdateBanner() {
 
   useEffect(() => {
     const update = registerSW({
+      immediate: true,
       onNeedRefresh() {
         setNeedRefresh(true);
       },
@@ -20,7 +23,6 @@ export function UpdateBanner() {
         console.error('SW registration error:', error);
       },
     });
-    // registerSW returns a function, store it for later use
     setUpdateSW(() => update);
   }, []);
 
