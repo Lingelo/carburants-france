@@ -17,9 +17,20 @@ import { InstallInstructionsModal } from './components/InstallInstructionsModal'
 import { Footer } from './components/Footer';
 import { useStationHistory } from './hooks/useStationHistory';
 import { useInstallPrompt } from './hooks/useInstallPrompt';
-import { timeAgo, FUEL_LABELS, getFuelPrice, getPriceBounds } from './utils/fuel';
+import { timeAgo, ALL_FUELS, FUEL_LABELS, getFuelPrice, getPriceBounds } from './utils/fuel';
 
 const SEARCH_RADIUS_KM = 10;
+const FUEL_STORAGE_KEY = 'last_selected_fuel';
+
+function readStoredFuel(): FuelType {
+  try {
+    const v = localStorage.getItem(FUEL_STORAGE_KEY);
+    if (v && (ALL_FUELS as string[]).includes(v)) return v as FuelType;
+  } catch {
+    // Safari private mode or storage disabled — fall through to default.
+  }
+  return 'Gazole';
+}
 
 interface StationWithDistance extends Station {
   distance: number;
@@ -30,7 +41,7 @@ export default function App() {
   const { stations, loading: stationsLoading, error, meta, loadDepartments, resetStations } = useStations();
   const { center, zoom, bounds, flyToCity, flyToStation } = useMapView();
 
-  const [selectedFuel, setSelectedFuel] = useState<FuelType>('Gazole');
+  const [selectedFuel, setSelectedFuel] = useState<FuelType>(readStoredFuel);
   const [selectedCity, setSelectedCity] = useState<CityResult | null>(null);
   const [selectedStationId, setSelectedStationId] = useState<number | null>(null);
   const [hoveredStationId, setHoveredStationId] = useState<number | null>(null);
@@ -154,6 +165,15 @@ export default function App() {
     return () => clearTimeout(t);
   }, [geoError]);
 
+  // Persist selected fuel so the user's last choice is restored on reload.
+  useEffect(() => {
+    try {
+      localStorage.setItem(FUEL_STORAGE_KEY, selectedFuel);
+    } catch {
+      // Storage disabled — silent no-op.
+    }
+  }, [selectedFuel]);
+
   // Toast on fuel change (only after a city is selected)
   useEffect(() => {
     if (prevFuelRef.current === selectedFuel) return;
@@ -229,8 +249,10 @@ export default function App() {
           />
 
           {/* Mobile fuel filter */}
-          <div className="glass scroll-fade-right rounded-xl px-3 py-2 shadow-md md:hidden">
-            <FuelFilter selected={selectedFuel} onChange={setSelectedFuel} />
+          <div className="glass scroll-fade-right rounded-xl shadow-md md:hidden">
+            <div className="overflow-x-auto px-3 py-2">
+              <FuelFilter selected={selectedFuel} onChange={setSelectedFuel} />
+            </div>
           </div>
         </div>
       </div>
