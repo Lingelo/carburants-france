@@ -29,12 +29,12 @@ export function SettingsScreen() {
   const refreshLocation = async () => {
     setRefreshing(true);
     try {
-      const c = await getBrowserLocation();
-      if (c) {
-        f.setUserLocation(c);
-        const addr = await reverseGeocode(c);
+      const { coords } = await getBrowserLocation();
+      if (coords) {
+        f.setUserLocation(coords);
+        const addr = await reverseGeocode(coords);
         if (addr) f.setSearchLabel(`${addr.postcode} ${addr.city}`);
-        else f.setSearchLabel(`${c.lat.toFixed(3)}, ${c.lng.toFixed(3)}`);
+        else f.setSearchLabel(`${coords.lat.toFixed(3)}, ${coords.lng.toFixed(3)}`);
       }
     } finally {
       setRefreshing(false);
