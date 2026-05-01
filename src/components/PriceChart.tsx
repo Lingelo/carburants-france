@@ -129,13 +129,14 @@ export function PriceChart({ series, fuelColors, size = 'inline' }: Props) {
   return (
     <div
       ref={wrapperRef}
-      className={size === 'fullscreen' ? 'relative w-full h-full' : 'relative w-full'}
+      className={size === 'fullscreen' ? 'relative w-full h-full min-h-0' : 'relative w-full'}
     >
       <svg
         ref={ref}
         viewBox={`0 0 ${W} ${H}`}
         preserveAspectRatio="xMidYMid meet"
-        className={size === 'fullscreen' ? 'w-full h-full select-none touch-none block' : 'w-full h-auto select-none touch-none block'}
+        style={size === 'fullscreen' ? { position: 'absolute', inset: 0, width: '100%', height: '100%' } : undefined}
+        className={size === 'fullscreen' ? 'select-none touch-none block' : 'w-full h-auto select-none touch-none block'}
         onMouseMove={(e) => onMove(e.clientX)}
         onMouseLeave={() => setCursorT(null)}
         onTouchStart={(e) => e.touches[0] && onMove(e.touches[0].clientX)}
