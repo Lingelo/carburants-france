@@ -15,7 +15,7 @@ import { SettingsScreen } from './screens/SettingsScreen';
 import { getBrowserLocation, reverseGeocode } from './lib/geocode';
 
 function Bootstrap() {
-  const { userLocation, setUserLocation, setSearchLabel } = useFilters();
+  const { setUserLocation, setSearchLabel } = useFilters();
   const settings = useSettings();
   const nav = useViewNav();
 
@@ -37,11 +37,9 @@ function Bootstrap() {
       const coords = await getBrowserLocation();
       if (cancelled) return;
       if (!coords) {
-        // No coords + no previous value → fall back to Paris.
-        if (!userLocation) {
-          setUserLocation({ lat: 48.8566, lng: 2.3522 });
-          setSearchLabel('Paris');
-        }
+        // Geolocation refused or unavailable. We don't fall back to a
+        // hard-coded city anymore — let the UI surface a welcome screen
+        // that asks the user to type an address instead.
         return;
       }
       const addr = await reverseGeocode(coords);
