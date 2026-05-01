@@ -332,11 +332,11 @@ export function MapScreen() {
     return (
       <div className="absolute inset-0 overflow-y-auto bg-background">
         <div className="min-h-full w-full flex items-center justify-center px-4 py-8">
-          <div className="w-full max-w-2xl bg-surface-container-lowest rounded-2xl shadow-[0_4px_24px_rgba(20,27,43,0.08)] border border-surface-variant p-6 md:p-10 flex flex-col items-center gap-6 text-center">
-            <div className="w-20 h-20 rounded-2xl bg-primary text-on-primary flex items-center justify-center shadow-lg shrink-0">
+          <div className="w-full max-w-2xl bg-surface-container-lowest rounded-2xl shadow-[0_4px_24px_rgba(20,27,43,0.08)] border border-surface-variant p-6 md:p-10 text-center space-y-6">
+            <div className="w-20 h-20 mx-auto rounded-2xl bg-primary text-on-primary flex items-center justify-center shadow-lg">
               <Icon name="location_searching" size={44} />
             </div>
-            <div className="space-y-2 w-full max-w-md">
+            <div className="space-y-2 max-w-md mx-auto">
               <h2 className="text-headline-lg font-semibold text-on-surface">
                 Où cherches-tu ?
               </h2>
@@ -344,7 +344,7 @@ export function MapScreen() {
                 Saisis ta ville ou ton code postal, ou autorise la géolocalisation pour voir les prix carburants autour de toi.
               </p>
             </div>
-            <div className="w-full max-w-md">
+            <div className="max-w-md mx-auto">
               <SearchBar
                 initialLabel={null}
                 onResult={(r) => {
@@ -353,7 +353,7 @@ export function MapScreen() {
                 }}
               />
             </div>
-            <div className="flex items-center gap-3 text-body-sm text-on-surface-variant w-full max-w-md">
+            <div className="flex items-center gap-3 text-body-sm text-on-surface-variant max-w-md mx-auto">
               <span className="flex-1 h-px bg-outline-variant" />
               ou
               <span className="flex-1 h-px bg-outline-variant" />
@@ -361,7 +361,7 @@ export function MapScreen() {
             <button
               onClick={onLocateMe}
               disabled={locating}
-              className="bg-primary text-on-primary px-6 py-3 rounded-xl text-body-lg font-semibold flex items-center gap-2 active:scale-95 transition-transform shadow-md disabled:opacity-70"
+              className="bg-primary text-on-primary px-6 py-3 rounded-xl text-body-lg font-semibold inline-flex items-center gap-2 active:scale-95 transition-transform shadow-md disabled:opacity-70"
             >
               <Icon name={locating ? 'sync' : 'my_location'} filled size={20} />
               {locating
@@ -371,7 +371,7 @@ export function MapScreen() {
                   : 'Utiliser ma position'}
             </button>
             {locationDenied && (
-              <p className="text-body-sm text-error w-full max-w-md flex items-start gap-2 -mt-2">
+              <p className="text-body-sm text-error max-w-md mx-auto flex items-start gap-2 -mt-2">
                 <Icon name="info" size={16} />
                 <span>
                   L'accès à la localisation a été refusé. Autorise-la dans les réglages
