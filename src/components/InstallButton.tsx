@@ -5,24 +5,24 @@ import { Icon } from './Icon';
 /**
  * Compact "Install" button for the TopAppBar. Adapts to the platform:
  * - Chromium → fires the native install dialog directly
- * - iOS Safari → opens a modal with Share + Add to Home Screen steps
  * - In-app webview → opens a modal explaining to reopen in a real browser
  * - Firefox / generic → opens a modal pointing at the browser menu
  *
- * Hides itself once the app is running standalone or in unsupported contexts.
+ * Hides itself once the app is running standalone or in unsupported contexts
+ * (including iOS Safari, where the install flow has to be done manually via
+ * Partager → Sur l'écran d'accueil).
  */
 export function InstallButton() {
   const inst = useInstallPrompt();
-  const [hint, setHint] = useState<null | 'ios' | 'webview' | 'generic'>(null);
+  const [hint, setHint] = useState<null | 'webview' | 'generic'>(null);
 
-  if (inst.installed) return null;
+  if (inst.installed || inst.platform === 'unsupported') return null;
 
   const onClick = async () => {
     if (inst.platform === 'native-prompt') {
       await inst.install();
       return;
     }
-    if (inst.platform === 'ios-safari') return setHint('ios');
     if (inst.platform === 'in-app-webview') return setHint('webview');
     setHint('generic');
   };
@@ -55,26 +55,6 @@ export function InstallButton() {
                 <Icon name="close" />
               </button>
             </div>
-
-            {hint === 'ios' && (
-              <ol className="space-y-3 text-body-lg text-on-surface">
-                <li className="flex items-start gap-3">
-                  <span className="bg-secondary text-on-secondary w-6 h-6 rounded-full flex items-center justify-center text-body-sm font-bold shrink-0">1</span>
-                  <span>
-                    Touche le bouton <strong>Partager</strong>{' '}
-                    <Icon name="ios_share" size={18} className="inline-block align-text-bottom" /> dans Safari.
-                  </span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="bg-secondary text-on-secondary w-6 h-6 rounded-full flex items-center justify-center text-body-sm font-bold shrink-0">2</span>
-                  <span>Choisis <strong>Sur l'écran d'accueil</strong>.</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="bg-secondary text-on-secondary w-6 h-6 rounded-full flex items-center justify-center text-body-sm font-bold shrink-0">3</span>
-                  <span>Confirme avec <strong>Ajouter</strong>.</span>
-                </li>
-              </ol>
-            )}
 
             {hint === 'webview' && (
               <div className="text-body-lg text-on-surface space-y-2">
