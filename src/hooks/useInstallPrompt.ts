@@ -9,9 +9,8 @@ interface BeforeInstallPromptEvent extends Event {
 
 export type InstallPlatform =
   | 'native-prompt'    // Chromium captured beforeinstallprompt; we can call prompt()
-  | 'ios-safari'       // iOS Safari → Share + Add to Home Screen
   | 'in-app-webview'   // Facebook/Instagram/Gmail in-app browser
-  | 'unsupported'      // Already installed or browser can't install
+  | 'unsupported'      // Already installed, iOS Safari, or browser can't install
   | 'generic';         // Firefox / desktop without prompt → use browser menu
 
 interface State {
@@ -23,14 +22,17 @@ interface State {
   install: () => Promise<boolean>;
 }
 
+function isStandalone(): boolean {
+  if (typeof window === 'undefined') return false;
+  return (
+    window.matchMedia?.('(display-mode: standalone)').matches ||
+    (navigator as Navigator & { standalone?: boolean }).standalone === true
+  );
+}
+
 function detectPlatform(): InstallPlatform {
   if (typeof window === 'undefined') return 'unsupported';
-
-  // Already running standalone
-  const standalone =
-    window.matchMedia?.('(display-mode: standalone)').matches ||
-    (navigator as Navigator & { standalone?: boolean }).standalone === true;
-  if (standalone) return 'unsupported';
+  if (isStandalone()) return 'unsupported';
 
   const ua = navigator.userAgent;
 
@@ -38,9 +40,11 @@ function detectPlatform(): InstallPlatform {
   const isWebview = /FBAN|FBAV|Instagram|Twitter|Line|MicroMessenger|GSA|LinkedIn/.test(ua);
   if (isWebview) return 'in-app-webview';
 
-  // iOS Safari (no beforeinstallprompt support yet)
+  // iOS Safari has no beforeinstallprompt and our custom Share + Add to Home
+  // Screen modal had safe-area issues. Hide the button entirely; users can
+  // still install manually via Safari → Partager → Sur l'écran d'accueil.
   const isIOS = /iPad|iPhone|iPod/.test(ua) && !('MSStream' in window);
-  if (isIOS) return 'ios-safari';
+  if (isIOS) return 'unsupported';
 
   return 'generic';
 }
@@ -48,7 +52,7 @@ function detectPlatform(): InstallPlatform {
 export function useInstallPrompt(): State {
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
   const [platform, setPlatform] = useState<InstallPlatform>(() => detectPlatform());
-  const [installed, setInstalled] = useState(() => detectPlatform() === 'unsupported');
+  const [installed, setInstalled] = useState(() => isStandalone());
 
   useEffect(() => {
     const onBeforeInstall = (e: Event) => {
