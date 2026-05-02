@@ -327,69 +327,18 @@ export function MapScreen() {
   };
 
   const popupStation = popupId !== null ? priced.find((p) => p.station.id === popupId) : null;
-
-  if (!f.userLocation) {
-    return (
-      <div className="absolute inset-0 overflow-y-auto bg-background">
-        <div className="min-h-full w-full flex items-center justify-center px-4 py-8">
-          <div className="w-full max-w-2xl bg-surface-container-lowest rounded-2xl shadow-[0_4px_24px_rgba(20,27,43,0.08)] border border-surface-variant p-6 md:p-10 text-center space-y-6">
-            <div className="w-20 h-20 mx-auto rounded-2xl bg-primary text-on-primary flex items-center justify-center shadow-lg">
-              <Icon name="location_searching" size={44} />
-            </div>
-            <div className="space-y-2 max-w-md mx-auto">
-              <h2 className="text-headline-lg font-semibold text-on-surface">
-                Où cherches-tu ?
-              </h2>
-              <p className="text-body-lg text-on-surface-variant">
-                Saisis ta ville ou ton code postal, ou autorise la géolocalisation pour voir les prix carburants autour de toi.
-              </p>
-            </div>
-            <div className="max-w-md mx-auto">
-              <SearchBar
-                initialLabel={null}
-                onResult={(r) => {
-                  f.setUserLocation({ lat: r.lat, lng: r.lng });
-                  f.setSearchLabel(`${r.postcode} ${r.city}`);
-                }}
-              />
-            </div>
-            <div className="flex items-center gap-3 text-body-sm text-on-surface-variant max-w-md mx-auto">
-              <span className="flex-1 h-px bg-outline-variant" />
-              ou
-              <span className="flex-1 h-px bg-outline-variant" />
-            </div>
-            <button
-              onClick={onLocateMe}
-              disabled={locating}
-              className="bg-primary text-on-primary px-6 py-3 rounded-xl text-body-lg font-semibold inline-flex items-center gap-2 active:scale-95 transition-transform shadow-md disabled:opacity-70"
-            >
-              <Icon name={locating ? 'sync' : 'my_location'} filled size={20} />
-              {locating
-                ? 'Localisation…'
-                : locationDenied
-                  ? 'Réessayer la localisation'
-                  : 'Utiliser ma position'}
-            </button>
-            {locationDenied && (
-              <p className="text-body-sm text-error max-w-md mx-auto flex items-start gap-2 -mt-2">
-                <Icon name="info" size={16} />
-                <span>
-                  L'accès à la localisation a été refusé. Autorise-la dans les réglages
-                  de ton navigateur, puis appuie à nouveau sur le bouton.
-                </span>
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const hasLocation = f.userLocation !== null;
+  // Default view: rough center of metropolitan France, zoomed out to a country-level view.
+  const center: [number, number] = hasLocation
+    ? [f.userLocation!.lat, f.userLocation!.lng]
+    : [46.6, 2.5];
+  const zoom = hasLocation ? 13 : 6;
 
   return (
     <div className="h-full relative">
       <MapContainer
-        center={[f.userLocation.lat, f.userLocation.lng]}
-        zoom={13}
+        center={center}
+        zoom={zoom}
         scrollWheelZoom
         zoomControl={false}
         className="absolute inset-0 z-0"
@@ -398,12 +347,16 @@ export function MapScreen() {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
           url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
         />
-        <MapRecenter lat={f.userLocation.lat} lng={f.userLocation.lng} />
-        <SearchRadiusCircle
-          lat={f.userLocation.lat}
-          lng={f.userLocation.lng}
-          radiusKm={f.radiusKm}
-        />
+        {hasLocation && (
+          <>
+            <MapRecenter lat={f.userLocation!.lat} lng={f.userLocation!.lng} />
+            <SearchRadiusCircle
+              lat={f.userLocation!.lat}
+              lng={f.userLocation!.lng}
+              radiusKm={f.radiusKm}
+            />
+          </>
+        )}
         <BoundsTracker onChange={setBounds} />
         <PanToStation station={panTarget} />
         <StationsCluster
@@ -472,9 +425,18 @@ export function MapScreen() {
         </div>
       )}
 
-      {!loading && stations.length > 0 && priced.length === 0 && (
+      {!loading && stations.length > 0 && priced.length === 0 && hasLocation && (
         <div className="absolute top-32 md:top-24 left-1/2 -translate-x-1/2 z-[400] bg-surface-container-lowest text-on-surface px-4 py-2 rounded-full shadow-md text-body-sm border border-outline-variant">
           Aucune station avec {f.selectedFuel} dans ce rayon.
+        </div>
+      )}
+
+      {!hasLocation && (
+        <div className="absolute top-32 md:top-24 left-1/2 -translate-x-1/2 z-[400] bg-surface-container-lowest text-on-surface px-4 py-2 rounded-xl shadow-md text-body-sm border border-outline-variant flex items-center gap-2 max-w-[90vw]">
+          <Icon name="location_searching" size={16} className="text-primary shrink-0" />
+          <span className="truncate">
+            Saisis une ville ou utilise ta position pour voir les prix.
+          </span>
         </div>
       )}
 
