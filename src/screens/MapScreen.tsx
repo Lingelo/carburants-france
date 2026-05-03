@@ -542,10 +542,10 @@ export function MapScreen() {
         <div
           ref={carouselRef}
           className={[
-            'flex-1 px-md pb-3 gap-gutter',
+            'flex-1 px-md pb-3 gap-gutter overscroll-contain',
             sheetExpanded
-              ? 'overflow-y-auto flex flex-col'
-              : 'overflow-x-auto snap-x snap-mandatory flex no-scrollbar',
+              ? 'overflow-y-auto flex flex-col touch-pan-y'
+              : 'overflow-x-auto snap-x snap-mandatory flex no-scrollbar touch-pan-x',
           ].join(' ')}
         >
           {visible.length === 0 && (
@@ -660,7 +660,7 @@ export function MapScreen() {
               </button>
             </div>
           </header>
-          <div ref={sidePanelRef} className="overflow-y-auto flex-1 p-3 flex flex-col gap-2">
+          <div ref={sidePanelRef} className="overflow-y-auto overscroll-contain flex-1 p-3 flex flex-col gap-2">
             {visible.length === 0 && (
               <p className="text-center text-body-sm text-on-surface-variant py-lg">
                 Aucune station dans la zone visible. Déplace la carte ou élargis le rayon.

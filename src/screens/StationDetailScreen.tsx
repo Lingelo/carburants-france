@@ -175,7 +175,7 @@ export function StationDetailScreen({ stationId }: Props) {
   };
 
   return (
-    <div className="absolute inset-0 overflow-y-auto pb-8">
+    <div className="absolute inset-0 overflow-y-auto overscroll-contain pb-8">
       {/* Map header */}
       <div className="relative w-full h-48 md:h-64">
         <MapContainer
