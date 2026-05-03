@@ -54,6 +54,14 @@ export async function reverseGeocode(coords: Coords): Promise<AddressResult | nu
   };
 }
 
+/** Reverse-geocode coords to a SearchBar-friendly label, with lat/lng fallback. */
+export async function reverseGeocodeLabel(coords: Coords): Promise<string> {
+  const addr = await reverseGeocode(coords);
+  return addr
+    ? `${addr.postcode} ${addr.city}`
+    : `${coords.lat.toFixed(3)}, ${coords.lng.toFixed(3)}`;
+}
+
 export type LocationResult =
   | { coords: Coords; denied: false }
   | { coords: null; denied: boolean };

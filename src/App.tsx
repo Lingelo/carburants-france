@@ -12,7 +12,7 @@ import { StationDetailScreen } from './screens/StationDetailScreen';
 import { FavoritesScreen } from './screens/FavoritesScreen';
 import { TrendsScreen } from './screens/TrendsScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
-import { getBrowserLocation, reverseGeocode } from './lib/geocode';
+import { getBrowserLocation, reverseGeocodeLabel } from './lib/geocode';
 
 function Bootstrap() {
   const { setUserLocation, setSearchLabel } = useFilters();
@@ -42,11 +42,8 @@ function Bootstrap() {
         // that asks the user to type an address instead.
         return;
       }
-      const addr = await reverseGeocode(coords);
+      const label = await reverseGeocodeLabel(coords);
       if (cancelled) return;
-      const label = addr
-        ? `${addr.postcode} ${addr.city}`
-        : `${coords.lat.toFixed(3)}, ${coords.lng.toFixed(3)}`;
       setUserLocation(coords);
       setSearchLabel(label);
     })();
