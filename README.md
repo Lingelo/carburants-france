@@ -2,7 +2,7 @@
 
 PWA de comparaison des prix carburants en France, alimentée par les données ouvertes de [prix-carburants.gouv.fr](https://prix-carburants.gouv.fr).
 
-Live : <https://angelolima.github.io/carburants-france/>
+Live : <https://lingelo.github.io/carburants-france/>
 
 ## Stack
 
