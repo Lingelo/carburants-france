@@ -11,7 +11,7 @@ import { useNearbyStations } from '../hooks/useNearbyStations';
 import { haversineKm, formatDistance } from '../lib/distance';
 import { timeAgo } from '../lib/data';
 import { formatPrice } from '../lib/format';
-import { getBrowserLocation } from '../lib/geocode';
+import { getBrowserLocation, reverseGeocodeLabel } from '../lib/geocode';
 import { getPriceBounds, getPriceColor } from '../lib/priceColor';
 import { SearchBar } from '../components/SearchBar';
 import { FilterSheet } from '../components/FilterSheet';
@@ -317,6 +317,7 @@ export function MapScreen() {
       const { coords, denied } = await getBrowserLocation();
       if (coords) {
         f.setUserLocation(coords);
+        f.setSearchLabel(await reverseGeocodeLabel(coords));
         setLocationDenied(false);
       } else {
         setLocationDenied(denied);

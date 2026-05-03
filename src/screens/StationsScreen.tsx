@@ -5,7 +5,7 @@ import { useFavorites } from '../state/FavoritesContext';
 import { useNearbyStations } from '../hooks/useNearbyStations';
 import { FUEL_TYPES, type FuelType } from '../types';
 import { haversineKm } from '../lib/distance';
-import { getBrowserLocation } from '../lib/geocode';
+import { getBrowserLocation, reverseGeocodeLabel } from '../lib/geocode';
 import { getPriceBounds, getPriceColor } from '../lib/priceColor';
 import { FuelChip } from '../components/FuelChip';
 import { StationCard } from '../components/StationCard';
@@ -28,6 +28,7 @@ export function StationsScreen() {
       const { coords, denied } = await getBrowserLocation();
       if (coords) {
         f.setUserLocation(coords);
+        f.setSearchLabel(await reverseGeocodeLabel(coords));
         setLocationDenied(false);
       } else {
         setLocationDenied(denied);
