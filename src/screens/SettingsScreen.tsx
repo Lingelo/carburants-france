@@ -4,12 +4,14 @@ import { useFilters } from '../state/FiltersContext';
 import { fetchMeta, timeAgo } from '../lib/data';
 import { getBrowserLocation, reverseGeocode } from '../lib/geocode';
 import { useForegroundRefresh } from '../hooks/useForegroundRefresh';
+import { useGeolocationPermission } from '../hooks/useGeolocationPermission';
 import { Icon } from '../components/Icon';
 
 export function SettingsScreen() {
   const s = useSettings();
   const f = useFilters();
   const foregroundVersion = useForegroundRefresh();
+  const permission = useGeolocationPermission();
   const [lastUpdate, setLastUpdate] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -122,21 +124,78 @@ export function SettingsScreen() {
               className="w-5 h-5 accent-secondary mt-1"
             />
           </label>
-          <div className="flex items-center justify-between gap-2 p-2">
-            <div className="min-w-0 flex-1">
-              <div className="text-body-lg text-on-surface">Position actuelle</div>
-              <div className="text-body-sm text-on-surface-variant truncate">
-                {positionLabel}
+          <div className="p-2 space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <div className="text-body-lg text-on-surface">Position actuelle</div>
+                <div className="text-body-sm text-on-surface-variant truncate">
+                  {positionLabel}
+                </div>
               </div>
+              <button
+                onClick={refreshLocation}
+                disabled={
+                  refreshing || permission === 'denied' || permission === 'unsupported'
+                }
+                className="bg-secondary-container text-on-secondary-container px-3 py-2 rounded-lg text-label-caps font-bold tracking-wider flex items-center gap-1 active:scale-95 transition-transform disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                <Icon name={refreshing ? 'sync' : 'my_location'} size={16} />
+                {refreshing ? 'Localisation…' : 'Actualiser'}
+              </button>
             </div>
-            <button
-              onClick={refreshLocation}
-              disabled={refreshing}
-              className="bg-secondary-container text-on-secondary-container px-3 py-2 rounded-lg text-label-caps font-bold tracking-wider flex items-center gap-1 active:scale-95 transition-transform disabled:opacity-60"
-            >
-              <Icon name={refreshing ? 'sync' : 'my_location'} size={16} />
-              {refreshing ? 'Localisation…' : 'Actualiser'}
-            </button>
+            {permission !== 'unknown' && (
+              <div
+                className={[
+                  'flex items-center gap-1.5 text-body-sm',
+                  permission === 'granted'
+                    ? 'text-primary'
+                    : permission === 'denied'
+                      ? 'text-error'
+                      : 'text-on-surface-variant',
+                ].join(' ')}
+              >
+                <Icon
+                  name={
+                    permission === 'granted'
+                      ? 'check_circle'
+                      : permission === 'denied'
+                        ? 'location_disabled'
+                        : permission === 'unsupported'
+                          ? 'block'
+                          : 'help'
+                  }
+                  size={16}
+                  filled={permission === 'granted'}
+                />
+                <span>
+                  {permission === 'granted' && 'Géolocalisation activée'}
+                  {permission === 'prompt' && 'Géolocalisation non demandée'}
+                  {permission === 'denied' && 'Géolocalisation désactivée'}
+                  {permission === 'unsupported' &&
+                    'Géolocalisation non disponible sur ce navigateur'}
+                </span>
+              </div>
+            )}
+            {permission === 'denied' && (
+              <details className="bg-error-container text-on-error-container rounded-lg text-body-sm border border-error/30 group">
+                <summary className="cursor-pointer list-none flex items-center justify-between gap-2 px-3 py-2 font-medium">
+                  <span className="flex items-center gap-1.5">
+                    <Icon name="info" size={16} />
+                    Comment réactiver ?
+                  </span>
+                  <Icon
+                    name="expand_more"
+                    size={18}
+                    className="transition-transform group-open:rotate-180"
+                  />
+                </summary>
+                <ol className="list-decimal pl-8 pr-3 pb-3 space-y-1">
+                  <li>Touche le cadenas (ou l'icône d'info) à gauche de l'adresse du site.</li>
+                  <li>Ouvre les autorisations du site, puis « Localisation ».</li>
+                  <li>Choisis « Autoriser », puis recharge la page.</li>
+                </ol>
+              </details>
+            )}
           </div>
         </section>
 
