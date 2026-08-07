@@ -36,8 +36,8 @@ android {
         applicationId = "fr.fuelradar"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.2.0"
 
         // Stable data contract served by GitHub Pages (see repo root README).
         buildConfigField(
