@@ -125,14 +125,19 @@ const ES_MOTORWAY_TYPE = /^\s*(?:AUTO\s?V[IÍ]A|AUTO\s?PISTA|AUTV|AU|AT)\b/i;
 const ES_ROAD_TYPE = /^\s*(?:CARRETERAS?|CARRERA|CTRA|CRTA|CR|(?:AP|A)[-\s]?\d)/i;
 // A-1..A-99 and AP-1..AP-99 are autovías/autopistas; the three- and four-digit
 // codes (A-333, A-8079) are conventional regional roads and must not match.
-const ES_MOTORWAY_CODE = /(?:^|[\s,.;(/])(?:AP|A)[-\s]?\d{1,2}(?![\d])/i;
+// A dot is not a separator here: "PARC.A1" is a plot number, not the A-1.
+const ES_MOTORWAY_CODE = /(?:^|[\s,;(/])(?:AP|A)[-\s]?\d{1,2}(?![\d])/i;
+// ...except right after the leading road-type token, where the feed abbreviates
+// without a space ("CRTA.A-68 km 231,170") and the code really is the road.
+const ES_ROAD_TYPE_CODE =
+  /^\s*(?:CARRETERAS?|CARRERA|CTRA|CRTA|CR)\.?\s*(?:AP|A)[-\s]?\d{1,2}(?![\d])/i;
 // "JUNTO A LA A-92" means beside the motorway, not on it.
 const ES_NEARBY = /\bJUNTO\b/i;
 
 /** True when a Spanish address places the station on an autovía/autopista. */
 function isSpanishMotorway(addr) {
   if (!addr || ES_NEARBY.test(addr)) return false;
-  if (ES_MOTORWAY_TYPE.test(addr)) return true;
+  if (ES_MOTORWAY_TYPE.test(addr) || ES_ROAD_TYPE_CODE.test(addr)) return true;
   return ES_ROAD_TYPE.test(addr) && ES_MOTORWAY_CODE.test(addr);
 }
 
