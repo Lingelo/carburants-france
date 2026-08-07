@@ -61,4 +61,24 @@ class StationParsingTest {
         assertNull(madrid.h24)
         assertEquals(1, madrid.fuels.size)
     }
+
+    @Test
+    fun reads_the_motorway_service_area_flag_and_leaves_it_null_when_absent() {
+        // "hw" is emitted only for French stations the government feed classifies
+        // as pop="A". Everywhere else it is absent, which must stay null (unknown)
+        // rather than decode as false — Spain and Portugal ship no equivalent flag.
+        val payload = """
+            [
+              { "id": 26270009, "lat": 44.7, "lng": 4.8, "cp": "26270", "hw": true,
+                "fuels": { "Gazole": { "p": 1.899, "d": "2026-08-07" } } },
+              { "id": 75001001, "lat": 48.85, "lng": 2.35, "cp": "75001",
+                "fuels": { "Gazole": { "p": 1.789, "d": "2026-08-07" } } }
+            ]
+        """.trimIndent()
+
+        val stations = json.decodeFromString(ListSerializer(Station.serializer()), payload)
+
+        assertTrue(stations[0].hw == true)
+        assertNull(stations[1].hw)
+    }
 }

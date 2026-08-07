@@ -23,6 +23,25 @@ Android 16). À corriger avant la mise en production. Statut au fil de l'eau.
 | 5 | « Voir sur la carte » : la station ciblée n'est **pas mise en évidence** (recentre seulement) | UX | À implémenter |
 | 6 | Bonus visuel : **animation** le long du tracé du trajet (onde/point qui se propage du départ à l'arrivée, en boucle) | Visuel (nice-to-have) | Idée |
 | 7 | Carte « classique » : afficher le **marqueur « ma position »** (où je suis) | UX | À implémenter |
+| 8 | Trajet : filtrer sur les **aires d'autoroute** (stations accessibles sans quitter l'autoroute) | Produit / UX | ✅ Implémenté |
+
+### #8 — Aires d'autoroute sur le trajet
+
+Le flux gouvernemental classe chaque station `pop="A"` (autoroute) ou `pop="R"` (route) ;
+sur autoroute une station est forcément dans une aire de service, donc `pop="A"` = « aire
+d'autoroute ». Le champ est exposé sous la clé `hw` du JSON partagé (France uniquement —
+l'Espagne et le Portugal n'ont pas d'équivalent, d'où `null` = inconnu, pas « non »).
+
+En mode trajet, une puce **« Aires d'autoroute (n) »** restreint la sélection à ces stations.
+Elle reste cliquable même à 0 pour pouvoir se désactiver sur un trajet sans autoroute ; un
+message explique alors le résultat vide plutôt que de revenir silencieusement à tout afficher.
+Chaque station de la liste indique aussi son **écart au tracé** (« À 2,3 km du trajet », ou
+« Sur le trajet, sans quitter l'autoroute »), et l'ordre suit la **progression le long du
+tracé** et non plus la distance à vol d'oiseau depuis le départ — les deux divergent dès que
+l'itinéraire fait une boucle.
+
+Volontairement **sans repli textuel** sur l'adresse : des libellés comme « Bretelle Est
+Autoroute A9 » désignent une station *près* d'une sortie, pas une aire.
 
 ## Refonte trajet = mode de la carte (décidée)
 

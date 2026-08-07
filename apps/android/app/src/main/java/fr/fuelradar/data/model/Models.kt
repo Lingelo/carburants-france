@@ -26,6 +26,12 @@ data class Station(
     val brand: String? = null,
     /** Open 24/7 via automatic dispenser. */
     val h24: Boolean? = null,
+    /**
+     * Motorway service area ("aire d'autoroute"): the station is reachable
+     * without leaving the motorway. France only — absent on Spanish and
+     * Portuguese stations, so null means "unknown", not "not a service area".
+     */
+    val hw: Boolean? = null,
     val services: List<String>? = null,
     /** Fuel code ("Gazole", "SP95", ...) -> price. */
     val fuels: Map<String, FuelPrice> = emptyMap(),

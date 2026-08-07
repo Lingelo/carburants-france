@@ -107,4 +107,9 @@
     <string name="route_error">Route unavailable. Try again.</string>
     <string name="route_hint">Enter a start and destination to see stations along the route.</string>
     <string name="route_no_result">No station in this corridor. Widen the distance.</string>
+    <string name="route_motorway_only">Motorway services (%1$d)</string>
+    <string name="route_no_motorway">No motorway services on this route. Turn the filter off to see the other stations.</string>
+    <string name="route_detour">%1$s off the route</string>
+    <string name="route_on_the_way">On the route, no need to exit the motorway</string>
+    <string name="motorway_badge">Motorway</string>
 </resources>

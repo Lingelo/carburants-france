@@ -42,6 +42,27 @@ import fr.fuelradar.domain.formatDistance
 import fr.fuelradar.domain.formatPrice
 
 /**
+ * "Aire d'autoroute" tag: the station is inside a motorway service area, so it is
+ * reached without leaving the motorway. Shown wherever a station is identified.
+ */
+@Composable
+fun MotorwayBadge(modifier: Modifier = Modifier) {
+    Surface(
+        modifier = modifier,
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        shape = RoundedCornerShape(6.dp),
+    ) {
+        Text(
+            stringResource(R.string.motorway_badge),
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSecondaryContainer,
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+        )
+    }
+}
+
+/**
  * Shared station card used by the stations list and favorites (mirror of the web
  * StationCard). Takes primitives so any screen can render it.
  */
@@ -57,6 +78,8 @@ fun StationCard(
     cheapest: Boolean = false,
     stale: Boolean = false,
     updatedLabel: String? = null,
+    /** Route mode: how far off the trace the station sits. Null outside route mode. */
+    detourKm: Double? = null,
     onToggleFavorite: () -> Unit,
     onViewMap: () -> Unit,
     onClick: () -> Unit,
@@ -83,12 +106,18 @@ fun StationCard(
                             BrandLogo(station.brand, size = 40.dp)
                             Spacer(Modifier.width(10.dp))
                             Column {
-                                Text(
-                                    station.brand ?: stringResource(R.string.station_fallback),
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.SemiBold,
-                                    maxLines = 1,
-                                )
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        station.brand ?: stringResource(R.string.station_fallback),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        maxLines = 1,
+                                    )
+                                    if (station.hw == true) {
+                                        Spacer(Modifier.width(6.dp))
+                                        MotorwayBadge()
+                                    }
+                                }
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Icon(
                                         Icons.Filled.LocationOn,
@@ -99,6 +128,17 @@ fun StationCard(
                                     val dist = distanceKm?.let { "${formatDistance(it)} • " } ?: ""
                                     Text(
                                         " $dist${station.addr.ifBlank { station.city }}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                    )
+                                }
+                                // Route mode: the detour is what decides whether a
+                                // station is worth stopping at, so it gets its own line.
+                                if (detourKm != null) {
+                                    Text(
+                                        if (station.hw == true) stringResource(R.string.route_on_the_way)
+                                        else stringResource(R.string.route_detour, formatDistance(detourKm)),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         maxLines = 1,

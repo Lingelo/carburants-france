@@ -107,4 +107,9 @@
     <string name="route_error">Rota indisponível. Tente novamente.</string>
     <string name="route_hint">Introduza partida e destino para ver os postos ao longo da rota.</string>
     <string name="route_no_result">Nenhum posto neste corredor. Aumente a distância.</string>
+    <string name="route_motorway_only">Áreas de serviço (%1$d)</string>
+    <string name="route_no_motorway">Nenhuma área de serviço nesta rota. Desative o filtro para ver os outros postos.</string>
+    <string name="route_detour">A %1$s da rota</string>
+    <string name="route_on_the_way">Na rota, sem sair da autoestrada</string>
+    <string name="motorway_badge">Autoestrada</string>
 </resources>

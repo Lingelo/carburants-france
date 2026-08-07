@@ -224,6 +224,9 @@ class MapViewModel : ViewModel() {
 
     fun setRouteCorridor(km: Int) = routeSession.setCorridor(km)
 
+    /** Restrict the trip to motorway service areas (see RouteSession). */
+    fun setRouteHighwayOnly(only: Boolean) = routeSession.setHighwayOnly(only)
+
     private fun labelOf(hit: AddressResult): String =
         listOf(hit.postcode, hit.city).filter { it.isNotBlank() }.joinToString(" ")
             .ifBlank { hit.label }

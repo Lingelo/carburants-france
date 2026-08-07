@@ -61,7 +61,14 @@ export function StationCard({
               <Icon name="local_gas_station" className="text-on-surface-variant" />
             </div>
             <div className="min-w-0">
-              <h3 className="text-headline-md font-semibold text-on-surface truncate">{display}</h3>
+              <div className="flex items-center gap-2 min-w-0">
+                <h3 className="text-headline-md font-semibold text-on-surface truncate">{display}</h3>
+                {station.hw && (
+                  <span className="shrink-0 text-label-caps font-bold tracking-wider bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded">
+                    {t('station.motorway')}
+                  </span>
+                )}
+              </div>
               <p className="text-body-sm text-on-surface-variant flex items-center gap-1">
                 <Icon name="location_on" size={16} />
                 <span className="truncate">

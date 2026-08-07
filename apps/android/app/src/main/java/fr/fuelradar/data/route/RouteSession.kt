@@ -2,9 +2,9 @@ package fr.fuelradar.data.route
 
 import fr.fuelradar.data.model.Station
 import fr.fuelradar.data.prefs.FiltersStore
+import fr.fuelradar.data.routing.CorridorStation
 import fr.fuelradar.data.routing.RoutingRepository
 import fr.fuelradar.domain.Coords
-import fr.fuelradar.domain.haversineKm
 import fr.fuelradar.domain.priceBounds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -16,11 +16,33 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
-/** A station selected along a route, with its price and distance from the start. */
+/**
+ * Which corridor stations end up on the trip: optionally only the motorway service
+ * areas, then thinned to [max].
+ *
+ * Thinning samples uniformly ALONG the route rather than cropping, so the density
+ * stays even from start to end — a driver needs options near the destination as
+ * much as near home. [corridor] must already be in driving order.
+ */
+internal fun selectAlongRoute(
+    corridor: List<CorridorStation>,
+    highwayOnly: Boolean,
+    max: Int,
+): List<CorridorStation> {
+    val kept = if (highwayOnly) corridor.filter { it.station.hw == true } else corridor
+    if (kept.size <= max) return kept
+    val stride = kept.size.toDouble() / max
+    return (0 until max).map { kept[(it * stride).toInt()] }
+}
+
+/** A station selected along a route, with its price and its place on the trip. */
 data class RouteStation(
     val station: Station,
     val price: Double?,
-    val distanceKm: Double?,
+    /** Distance driven from the start of the route to reach it. */
+    val progressKm: Double,
+    /** How far it sits off the trace — 0 km means "on the road you are driving". */
+    val detourKm: Double,
 )
 
 /**
@@ -38,6 +60,10 @@ data class RouteState(
     val routePoints: List<Coords> = emptyList(),
     /** Stations along the route, sorted by progression from the start (nearest first). */
     val stations: List<RouteStation> = emptyList(),
+    /** Keep only motorway service areas ("aires d'autoroute") along the trip. */
+    val highwayOnly: Boolean = false,
+    /** Motorway service areas in the corridor, counted before [highwayOnly] applies. */
+    val highwayCount: Int = 0,
     val corridorKm: Int = 5,
     val distanceKm: Double = 0.0,
     val durationMin: Int = 0,
@@ -101,6 +127,16 @@ class RouteSession(
         if (_state.value.hasRoute) recomputeStations()
     }
 
+    /**
+     * Restrict the trip to motorway service areas — the stations you reach
+     * without leaving the motorway. Re-filters the current corridor, no re-route.
+     */
+    fun setHighwayOnly(only: Boolean) {
+        if (_state.value.highwayOnly == only) return
+        _state.value = _state.value.copy(highwayOnly = only)
+        if (_state.value.hasRoute) recomputeStations()
+    }
+
     private fun maybeCompute() {
         val s = _state.value.start ?: return
         val e = _state.value.end ?: return
@@ -122,6 +158,7 @@ class RouteSession(
                 distanceKm = rr.distanceKm,
                 durationMin = rr.durationMin,
                 stations = sel.rows,
+                highwayCount = sel.highwayCount,
                 pMin = sel.pMin,
                 pMax = sel.pMax,
                 cheapestId = sel.cheapestId,
@@ -140,6 +177,7 @@ class RouteSession(
             _state.value = _state.value.copy(
                 loading = false,
                 stations = sel.rows,
+                highwayCount = sel.highwayCount,
                 pMin = sel.pMin,
                 pMax = sel.pMax,
                 cheapestId = sel.cheapestId,
@@ -149,6 +187,7 @@ class RouteSession(
 
     private data class Selected(
         val rows: List<RouteStation>,
+        val highwayCount: Int,
         val pMin: Double,
         val pMax: Double,
         val cheapestId: Long?,
@@ -156,21 +195,21 @@ class RouteSession(
 
     private suspend fun computeStations(points: List<Coords>): Selected {
         val fuel = filters.filters.first().fuel
-        val start = _state.value.start
-        val list = routing.alongRoute(points, _state.value.corridorKm.toDouble(), fuel, MAX_STATIONS)
-        val rows = list.map { st ->
+        val corridor = routing.alongRoute(points, _state.value.corridorKm.toDouble(), fuel)
+        // Counted on the whole corridor, before filtering: the chip has to say how
+        // many service areas the trip offers even while it is hiding everything else.
+        val highwayCount = corridor.count { it.station.hw == true }
+        val rows = selectAlongRoute(corridor, _state.value.highwayOnly, MAX_STATIONS).map { cs ->
             RouteStation(
-                station = st,
-                price = fuel.priceIn(st.fuels),
-                distanceKm = start?.let { haversineKm(it.lat, it.lng, st.lat, st.lng) },
+                station = cs.station,
+                price = fuel.priceIn(cs.station.fuels),
+                progressKm = cs.progressKm,
+                detourKm = cs.detourKm,
             )
         }
-        // List view: order by progression from the start (nearest first), because a
-        // route is about distance, not price. The cheapest is still highlighted.
-        val sorted = rows.sortedBy { it.distanceKm ?: Double.MAX_VALUE }
-        val (pMin, pMax) = priceBounds(sorted.mapNotNull { it.price })
-        val cheapest = sorted.minByOrNull { it.price ?: Double.MAX_VALUE }?.station?.id
-        return Selected(sorted, pMin, pMax, cheapest)
+        val (pMin, pMax) = priceBounds(rows.mapNotNull { it.price })
+        val cheapest = rows.minByOrNull { it.price ?: Double.MAX_VALUE }?.station?.id
+        return Selected(rows, highwayCount, pMin, pMax, cheapest)
     }
 
     private companion object {

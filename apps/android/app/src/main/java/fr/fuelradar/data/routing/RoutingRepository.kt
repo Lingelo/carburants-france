@@ -20,6 +20,15 @@ data class RouteResult(
     val durationMin: Int,
 )
 
+/** A station inside the route corridor, placed relative to the trace. */
+data class CorridorStation(
+    val station: Station,
+    /** How far off the trace it sits — the detour, straight-line. */
+    val detourKm: Double,
+    /** How far along the trip it is, measured from the start. */
+    val progressKm: Double,
+)
+
 /**
  * Driving routes via OSRM + selection of stations along the route. Network errors
  * degrade to null/empty (same policy as StationRepository) so the UI never crashes.
@@ -46,15 +55,17 @@ class RoutingRepository(
     }
 
     /**
-     * Stations within [corridorKm] of the route [polyline] that sell [fuelCode],
-     * cheapest first, capped at [max].
+     * Every station within [corridorKm] of the route [polyline] that sells [fuel],
+     * ordered by progression from the start of the trip. Uncapped and unfiltered
+     * beyond the corridor itself: the caller decides what to keep (see
+     * [fr.fuelradar.data.route.RouteSession]), which is what lets it count the
+     * motorway stations it is about to filter out.
      */
     suspend fun alongRoute(
         polyline: List<Coords>,
         corridorKm: Double,
         fuel: FuelType,
-        max: Int,
-    ): List<Station> = withContext(Dispatchers.IO) {
+    ): List<CorridorStation> = withContext(Dispatchers.IO) {
         if (polyline.size < 2) return@withContext emptyList()
         val index = stations.deptBbox() ?: return@withContext emptyList()
 
@@ -79,17 +90,23 @@ class RoutingRepository(
         }
         val corridorM = corridorKm * 1000.0
 
-        val inCorridor = stations.stationsForDepts(depts.toList())
-            .filter { fuel.availableIn(it.fuels) }
-            .filter { PolyUtil.isLocationOnPath(LatLng(it.lat, it.lng), testRoute, false, corridorM) }
+        // Distance travelled to reach each point of the decimated route, so a
+        // station's position on the trip can be read off its nearest point.
+        val travelledKm = DoubleArray(testRoute.size)
+        for (idx in 1 until testRoute.size) {
+            val a = testRoute[idx - 1]
+            val b = testRoute[idx]
+            travelledKm[idx] = travelledKm[idx - 1] +
+                haversineKm(a.latitude, a.longitude, b.latitude, b.longitude)
+        }
 
         // Keep ALL stations in the corridor (not just the cheapest per segment):
         // the user wants to see every station near the trip, especially the ones
-        // close to home at the start. Only if there are more than [max] do we
-        // sample uniformly ALONG the route, so the density stays even from start
-        // to end instead of cropping one end.
-        if (inCorridor.size <= max) return@withContext inCorridor
-        val ordered = inCorridor
+        // close to home at the start.
+        stations.stationsForDepts(depts.toList())
+            .asSequence()
+            .filter { fuel.availableIn(it.fuels) }
+            .filter { PolyUtil.isLocationOnPath(LatLng(it.lat, it.lng), testRoute, false, corridorM) }
             .map { st ->
                 var nearest = 0
                 var nearestKm = Double.MAX_VALUE
@@ -97,10 +114,12 @@ class RoutingRepository(
                     val d = haversineKm(st.lat, st.lng, testRoute[idx].latitude, testRoute[idx].longitude)
                     if (d < nearestKm) { nearestKm = d; nearest = idx }
                 }
-                st to nearest
+                CorridorStation(station = st, detourKm = nearestKm, progressKm = travelledKm[nearest])
             }
-            .sortedBy { it.second }
-        val stride = ordered.size.toDouble() / max
-        (0 until max).map { ordered[(it * stride).toInt()].first }
+            // Order by progression along the trip, not by straight-line distance
+            // from the start: on a route that curves back (a bay, a mountain
+            // pass) the two disagree and only the first matches driving order.
+            .sortedBy { it.progressKm }
+            .toList()
     }
 }
