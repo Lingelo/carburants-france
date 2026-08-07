@@ -372,6 +372,7 @@ fun MapScreen(
                     onEndQuery = viewModel::onRouteEndQueryChange,
                     onSelectStart = viewModel::selectRouteStart,
                     onSelectEnd = viewModel::selectRouteEnd,
+                    onToggleHighwayOnly = viewModel::setRouteHighwayOnly,
                     onExit = viewModel::exitRouteMode,
                 )
             } else {
@@ -632,6 +633,7 @@ private fun RouteInputPanel(
     onEndQuery: (String) -> Unit,
     onSelectStart: (AddressResult) -> Unit,
     onSelectEnd: (AddressResult) -> Unit,
+    onToggleHighwayOnly: (Boolean) -> Unit,
     onExit: () -> Unit,
 ) {
     // Collapse the inputs once a route is computed so the map gets full height;
@@ -725,6 +727,31 @@ private fun RouteInputPanel(
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 2.dp),
                 )
+                // Motorway-only: on a long trip the service areas are the stations
+                // you can actually use — no exit, no detour. Deliberately stays
+                // clickable at a count of 0, otherwise a motorway-free route would
+                // trap the filter in the "on" state with nothing left to show.
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 2.dp),
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    ElevatedFilterChip(
+                        selected = route.highwayOnly,
+                        onClick = { onToggleHighwayOnly(!route.highwayOnly) },
+                        label = {
+                            Text(stringResource(R.string.route_motorway_only, route.highwayCount))
+                        },
+                    )
+                }
+                if (route.highwayOnly && route.stations.isEmpty()) {
+                    Text(
+                        stringResource(R.string.route_no_motorway),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
+                    )
+                }
             }
         }
     }

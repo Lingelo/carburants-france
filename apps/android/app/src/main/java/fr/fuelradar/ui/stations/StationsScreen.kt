@@ -222,6 +222,7 @@ fun StationsScreen(
                         selectedFuel = state.filters.fuel,
                         stale = stale,
                         updatedLabel = updated,
+                        detourKm = row.detourKm,
                         onToggleFavorite = { viewModel.toggleFavorite(row.station.id) },
                         onViewMap = {
                             viewModel.focusOnMap(row.station)

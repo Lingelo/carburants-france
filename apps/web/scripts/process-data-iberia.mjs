@@ -114,6 +114,28 @@ function normalizeBrand(raw) {
     .replace(/(^|[\s\-.'])\p{L}/gu, (m) => m.toUpperCase());
 }
 
+// Motorway service areas ("hw") for Spain. Portugal ships an explicit station
+// type and France a road classification, but the MINETUR feed has neither — the
+// address is the only signal. It is written road-type first ("CARRETERA A-2
+// KM. 333,8"), so the LEADING token decides: an urban address stays urban even
+// when it mentions a motorway later ("POLIGONO ... PARCELA A-1", "CALLE A2").
+// That ordering is what keeps out the near-miss addresses — an industrial plot
+// numbered A-1, or a station merely reachable from the motorway.
+const ES_MOTORWAY_TYPE = /^\s*(?:AUTO\s?V[IÍ]A|AUTO\s?PISTA|AUTV|AU|AT)\b/i;
+const ES_ROAD_TYPE = /^\s*(?:CARRETERAS?|CARRERA|CTRA|CRTA|CR|(?:AP|A)[-\s]?\d)/i;
+// A-1..A-99 and AP-1..AP-99 are autovías/autopistas; the three- and four-digit
+// codes (A-333, A-8079) are conventional regional roads and must not match.
+const ES_MOTORWAY_CODE = /(?:^|[\s,.;(/])(?:AP|A)[-\s]?\d{1,2}(?![\d])/i;
+// "JUNTO A LA A-92" means beside the motorway, not on it.
+const ES_NEARBY = /\bJUNTO\b/i;
+
+/** True when a Spanish address places the station on an autovía/autopista. */
+function isSpanishMotorway(addr) {
+  if (!addr || ES_NEARBY.test(addr)) return false;
+  if (ES_MOTORWAY_TYPE.test(addr)) return true;
+  return ES_ROAD_TYPE.test(addr) && ES_MOTORWAY_CODE.test(addr);
+}
+
 /** "1,499" / "1,659 €" → 1.499 (undefined when empty or unparsable). */
 function parsePrice(raw) {
   if (!raw) return undefined;
@@ -207,6 +229,7 @@ async function processSpain() {
     const brand = normalizeBrand(row['Rótulo']);
     if (brand) entry.brand = brand;
     if (/24\s*H/i.test(row['Horario'] ?? '')) entry.h24 = true;
+    if (isSpanishMotorway(entry.addr)) entry.hw = true;
     groups[dept].push(entry);
   }
 
@@ -252,6 +275,11 @@ async function processPortugal() {
         };
         const brand = normalizeBrand(row.Marca);
         if (brand) station.brand = brand;
+        // DGEG classifies each station ("Auto-estrada" / "Área comercial" /
+        // "Outro"), so no address guessing is needed here — and the feed shows
+        // exactly why that matters: "Lugar da Lameira Grande ... NÓ A1/A23" and
+        // "Ligação à A8" name the junction, not a station on the motorway.
+        if (row.TipoPosto === 'Auto-estrada') station.hw = true;
         stations.set(stationId, station);
       }
       // "2026-07-06 17:25" → "2026-07-06"

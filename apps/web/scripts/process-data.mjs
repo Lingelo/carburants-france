@@ -210,7 +210,7 @@ function parseXML(xmlPath) {
       // Detect station opening tag
       const pdvMatch = line.match(/<pdv\s+id="(\d+)"\s+latitude="([^"]*?)"\s+longitude="([^"]*?)"\s+cp="([^"]*?)"\s+pop="([^"]*?)"/);
       if (pdvMatch) {
-        const [, id, latRaw, lngRaw, cp] = pdvMatch;
+        const [, id, latRaw, lngRaw, cp, pop] = pdvMatch;
         currentStation = {
           id: parseInt(id),
           lat: parseFloat(latRaw) / 100000,
@@ -218,6 +218,12 @@ function parseXML(xmlPath) {
           cp: cp.padStart(5, '0'),
           addr: '',
           city: '',
+          // pop="A" (autoroute) vs "R" (route) is the official road classification.
+          // On French motorways fuel only exists inside a service area, so this
+          // flag is exactly "aire d'autoroute": fill up without leaving the road.
+          // Deliberately no address-text fallback — strings like "Bretelle Est
+          // Autoroute A9" name a station *next to* an exit, not one on the motorway.
+          hw: pop === 'A',
           fuels: {},
         };
       }
@@ -351,6 +357,7 @@ function groupByDepartment(stations, brandMap) {
     const brand = brandMap.get(station.id);
     if (brand) entry.brand = brand;
     if (station.h24) entry.h24 = true;
+    if (station.hw) entry.hw = true;
     if (station.services && station.services.length > 0) entry.services = station.services;
     groups[dept].push(entry);
   }

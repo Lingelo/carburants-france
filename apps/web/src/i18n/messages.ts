@@ -69,6 +69,7 @@ const fr = {
   'station.perWeek': '{delta} / 7 j',
   'station.services': 'Services',
   'station.h24': 'Automate 24/7',
+  'station.motorway': 'Autoroute',
   'station.shareStation': 'Partager cette station',
   'station.noHistory': "Pas d'historique disponible",
 
@@ -262,6 +263,7 @@ const es: Messages = {
   'station.perWeek': '{delta} / 7 d',
   'station.services': 'Servicios',
   'station.h24': 'Autoservicio 24/7',
+  'station.motorway': 'Autopista',
   'station.shareStation': 'Compartir esta estación',
   'station.noHistory': 'Sin historial disponible',
 
@@ -451,6 +453,7 @@ const pt: Messages = {
   'station.perWeek': '{delta} / 7 d',
   'station.services': 'Serviços',
   'station.h24': 'Automático 24/7',
+  'station.motorway': 'Autoestrada',
   'station.shareStation': 'Partilhar este posto',
   'station.noHistory': 'Sem histórico disponível',
 
@@ -641,6 +644,7 @@ const en: Messages = {
   'station.perWeek': '{delta} / 7 d',
   'station.services': 'Services',
   'station.h24': 'Self-service 24/7',
+  'station.motorway': 'Motorway',
   'station.shareStation': 'Share this station',
   'station.noHistory': 'No history available',
 

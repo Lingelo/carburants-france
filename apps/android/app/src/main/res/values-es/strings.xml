@@ -107,4 +107,9 @@
     <string name="route_error">Ruta no disponible. Inténtalo de nuevo.</string>
     <string name="route_hint">Introduce salida y destino para ver las gasolineras a lo largo de la ruta.</string>
     <string name="route_no_result">Ninguna gasolinera en este corredor. Amplía la distancia.</string>
+    <string name="route_motorway_only">Áreas de servicio (%1$d)</string>
+    <string name="route_no_motorway">Ninguna área de servicio en esta ruta. Desactiva el filtro para ver las demás gasolineras.</string>
+    <string name="route_detour">A %1$s de la ruta</string>
+    <string name="route_on_the_way">En la ruta, sin salir de la autopista</string>
+    <string name="motorway_badge">Autopista</string>
 </resources>

@@ -23,6 +23,41 @@ Android 16). À corriger avant la mise en production. Statut au fil de l'eau.
 | 5 | « Voir sur la carte » : la station ciblée n'est **pas mise en évidence** (recentre seulement) | UX | À implémenter |
 | 6 | Bonus visuel : **animation** le long du tracé du trajet (onde/point qui se propage du départ à l'arrivée, en boucle) | Visuel (nice-to-have) | Idée |
 | 7 | Carte « classique » : afficher le **marqueur « ma position »** (où je suis) | UX | À implémenter |
+| 8 | Trajet : filtrer sur les **aires d'autoroute** (stations accessibles sans quitter l'autoroute) | Produit / UX | ✅ Implémenté |
+
+### #8 — Aires d'autoroute sur le trajet
+
+Le champ est exposé sous la clé `hw` du JSON partagé, pour **les trois pays**, chacun avec
+sa propre source :
+
+| Pays | Source | Aires détectées |
+|---|---|---|
+| France | attribut `pop="A"` (autoroute) du XML gouvernemental | 435 / 9 672 |
+| Portugal | champ `TipoPosto == "Auto-estrada"` de la DGEG | 125 / 3 110 |
+| Espagne | **l'adresse** — le flux MINETUR n'a aucun champ de classification | 920 / 11 348 |
+
+France et Portugal ont donc un champ officiel ; seule l'Espagne demande une règle. Les
+adresses espagnoles sont écrites *type de voie d'abord* (« CARRETERA A-2 KM. 333,8 »), donc
+**le premier token décide** : une adresse urbaine reste urbaine même si elle mentionne une
+autoroute plus loin (« POLIGONO … PARCELA A-1 », « CALLE A2 »). Les codes `A-1`…`A-99` et
+`AP-1`…`AP-99` sont des autovías/autopistas ; à 3 ou 4 chiffres (`A-333`, `A-8079`) ce sont
+des routes régionales, exclues. « JUNTO A » signifie *à côté de*, pas *sur*.
+
+Ce garde-fou n'est pas théorique : les trois flux contiennent les mêmes pièges, des stations
+qui *citent* une autoroute sans être dessus — « Bretelle Est Autoroute A9 » (FR), « Ligação
+à A8 » et « NÓ A1/A23 » (PT), « ACCESO A-66 » et « PARCELA A-1 » (ES). C'est aussi pourquoi
+la France et le Portugal n'ont **aucun repli textuel** : leur champ officiel est plus fiable.
+
+En mode trajet, une puce **« Aires d'autoroute (n) »** restreint la sélection à ces stations.
+Elle reste cliquable même à 0 pour pouvoir se désactiver sur un trajet sans autoroute ; un
+message explique alors le résultat vide plutôt que de revenir silencieusement à tout afficher.
+Chaque station de la liste indique aussi son **écart au tracé** (« À 2,3 km du trajet », ou
+« Sur le trajet, sans quitter l'autoroute »), et l'ordre suit la **progression le long du
+tracé** et non plus la distance à vol d'oiseau depuis le départ — les deux divergent dès que
+l'itinéraire fait une boucle.
+
+Volontairement **sans repli textuel** sur l'adresse : des libellés comme « Bretelle Est
+Autoroute A9 » désignent une station *près* d'une sortie, pas une aire.
 
 ## Refonte trajet = mode de la carte (décidée)
 

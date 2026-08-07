@@ -20,8 +20,11 @@ import kotlinx.coroutines.launch
 
 data class StationRow(
     val station: Station,
+    /** Distance from the search centre — or, in route mode, driven from the start. */
     val distanceKm: Double,
     val price: Double?,
+    /** Route mode only: how far the station sits off the trace. */
+    val detourKm: Double? = null,
 )
 
 data class StationsUiState(
@@ -194,7 +197,7 @@ class StationsViewModel : ViewModel() {
         _state.value = _state.value.copy(
             loading = false,
             routeActive = true,
-            rows = r.stations.map { StationRow(it.station, it.distanceKm ?: 0.0, it.price) },
+            rows = r.stations.map { StationRow(it.station, it.progressKm, it.price, it.detourKm) },
             pMin = r.pMin,
             pMax = r.pMax,
             cheapestId = r.cheapestId,

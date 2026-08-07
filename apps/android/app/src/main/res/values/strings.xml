@@ -115,4 +115,9 @@
     <string name="route_error">Itinéraire indisponible. Réessayez.</string>
     <string name="route_hint">Saisissez un départ et une arrivée pour voir les stations le long du trajet.</string>
     <string name="route_no_result">Aucune station dans ce couloir. Élargissez la distance.</string>
+    <string name="route_motorway_only">Aires d\'autoroute (%1$d)</string>
+    <string name="route_no_motorway">Aucune aire d\'autoroute sur ce trajet. Désactivez le filtre pour voir les autres stations.</string>
+    <string name="route_detour">À %1$s du trajet</string>
+    <string name="route_on_the_way">Sur le trajet, sans quitter l\'autoroute</string>
+    <string name="motorway_badge">Autoroute</string>
 </resources>

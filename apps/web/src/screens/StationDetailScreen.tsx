@@ -331,7 +331,7 @@ export function StationDetailScreen({ stationId }: Props) {
           </section>
         </div>
 
-        {(station.h24 || (station.services && station.services.length > 0)) && (
+        {(station.h24 || station.hw || (station.services && station.services.length > 0)) && (
           <section className="bg-surface-container-lowest p-lg rounded-xl shadow-[0_4px_6px_-1px_rgba(22,29,27,0.1)]">
             <h2 className="text-headline-md font-semibold text-on-surface mb-md flex items-center gap-2 border-b border-surface-variant pb-2">
               <Icon name="handyman" className="text-secondary" />
@@ -342,6 +342,12 @@ export function StationDetailScreen({ stationId }: Props) {
                 <div className="flex items-center gap-sm text-body-sm text-on-surface bg-tertiary-container/40 border border-tertiary-fixed-dim/40 px-3 py-2 rounded-lg">
                   <Icon name="schedule" filled className="text-tertiary" />
                   <span>{t('station.h24')}</span>
+                </div>
+              )}
+              {station.hw && (
+                <div className="flex items-center gap-sm text-body-sm text-on-surface bg-secondary-container/40 border border-secondary/30 px-3 py-2 rounded-lg">
+                  <Icon name="signpost" filled className="text-secondary" />
+                  <span>{t('station.motorway')}</span>
                 </div>
               )}
               {station.services?.map((svc) => (

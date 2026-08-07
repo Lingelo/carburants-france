@@ -61,4 +61,24 @@ class StationParsingTest {
         assertNull(madrid.h24)
         assertEquals(1, madrid.fuels.size)
     }
+
+    @Test
+    fun reads_the_motorway_service_area_flag_and_leaves_it_null_when_absent() {
+        // "hw" is emitted only for motorway service areas, in all three countries.
+        // Everywhere else it is absent from the JSON entirely, which must decode as
+        // null rather than blow up — the flag is never serialised as false.
+        val payload = """
+            [
+              { "id": 26270009, "lat": 44.7, "lng": 4.8, "cp": "26270", "hw": true,
+                "fuels": { "Gazole": { "p": 1.899, "d": "2026-08-07" } } },
+              { "id": 75001001, "lat": 48.85, "lng": 2.35, "cp": "75001",
+                "fuels": { "Gazole": { "p": 1.789, "d": "2026-08-07" } } }
+            ]
+        """.trimIndent()
+
+        val stations = json.decodeFromString(ListSerializer(Station.serializer()), payload)
+
+        assertTrue(stations[0].hw == true)
+        assertNull(stations[1].hw)
+    }
 }

@@ -33,6 +33,15 @@ export interface Station {
   brand?: string;
   /** Open 24/7 via automatic dispenser (from XML automate-24-24 attribute). */
   h24?: boolean;
+  /**
+   * Motorway service area: the station is reachable without leaving the
+   * motorway. Derived per country by the data scripts — France from the XML
+   * `pop="A"` road classification, Portugal from the DGEG `TipoPosto`
+   * ("Auto-estrada"), Spain from the address, the only signal that feed gives.
+   * Absent means "not a service area" (or unknown for a station whose address
+   * is too vague), never `false`.
+   */
+  hw?: boolean;
   /** Free-form service labels straight from the gov XML (e.g. "Lavage automatique"). */
   services?: string[];
   fuels: Partial<Record<FuelType, FuelPrice>>;

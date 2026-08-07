@@ -82,6 +82,7 @@ import fr.fuelradar.domain.haversineKm
 import fr.fuelradar.domain.priceBounds
 import fr.fuelradar.domain.priceColor
 import fr.fuelradar.ui.common.BrandLogo
+import fr.fuelradar.ui.common.MotorwayBadge
 import fr.fuelradar.ui.common.relativeTime
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -201,12 +202,18 @@ fun StationDetailScreen(stationId: Long, onBack: () -> Unit) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 BrandLogo(st.brand, size = 52.dp)
                 Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
-                    Text(
-                        st.brand ?: stringResource(R.string.station_fallback),
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            st.brand ?: stringResource(R.string.station_fallback),
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                        )
+                        if (st.hw == true) {
+                            Spacer(Modifier.width(8.dp))
+                            MotorwayBadge()
+                        }
+                    }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Filled.Place, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp))
                         val dist = filters.userLocation?.let { " • ${formatDistance(haversineKm(it.lat, it.lng, st.lat, st.lng))}" } ?: ""
