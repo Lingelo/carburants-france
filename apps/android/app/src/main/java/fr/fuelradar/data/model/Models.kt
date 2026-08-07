@@ -28,8 +28,9 @@ data class Station(
     val h24: Boolean? = null,
     /**
      * Motorway service area ("aire d'autoroute"): the station is reachable
-     * without leaving the motorway. France only — absent on Spanish and
-     * Portuguese stations, so null means "unknown", not "not a service area".
+     * without leaving the motorway. Set for all three countries by the data
+     * scripts, each from its own source (FR road classification, PT station
+     * type, ES address). Only ever true or absent, never false.
      */
     val hw: Boolean? = null,
     val services: List<String>? = null,

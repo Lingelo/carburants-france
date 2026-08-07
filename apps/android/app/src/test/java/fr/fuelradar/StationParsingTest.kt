@@ -64,9 +64,9 @@ class StationParsingTest {
 
     @Test
     fun reads_the_motorway_service_area_flag_and_leaves_it_null_when_absent() {
-        // "hw" is emitted only for French stations the government feed classifies
-        // as pop="A". Everywhere else it is absent, which must stay null (unknown)
-        // rather than decode as false — Spain and Portugal ship no equivalent flag.
+        // "hw" is emitted only for motorway service areas, in all three countries.
+        // Everywhere else it is absent from the JSON entirely, which must decode as
+        // null rather than blow up — the flag is never serialised as false.
         val payload = """
             [
               { "id": 26270009, "lat": 44.7, "lng": 4.8, "cp": "26270", "hw": true,
