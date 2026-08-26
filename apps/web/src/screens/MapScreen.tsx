@@ -10,6 +10,7 @@ import { useFavorites } from '../state/FavoritesContext';
 import { useNearbyStations } from '../hooks/useNearbyStations';
 import { useI18n } from '../i18n';
 import { haversineKm, formatDistance } from '../lib/distance';
+import { darkTiles } from '../lib/tiles';
 import { timeAgo } from '../lib/data';
 import { formatPrice } from '../lib/format';
 import { getBrowserLocation, reverseGeocodeLabel } from '../lib/geocode';
@@ -26,7 +27,6 @@ import { InstallButton } from '../components/InstallButton';
 import { Icon } from '../components/Icon';
 import { FUEL_LABELS, FUEL_TYPES, type FuelType, type Station } from '../types';
 
-const DARK_TILES = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
 
 interface PricedStation {
   station: Station;
@@ -802,8 +802,10 @@ export function MapScreen() {
           className="absolute inset-0 z-0"
         >
           <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
-            url={DARK_TILES}
+            attribution={darkTiles.attribution}
+            url={darkTiles.url}
+            tileSize={darkTiles.tileSize}
+            zoomOffset={darkTiles.zoomOffset}
           />
           {hasLocation && (
             <>

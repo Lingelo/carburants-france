@@ -12,6 +12,7 @@ import { Icon } from '../components/Icon';
 import { BrandAvatar } from '../components/BrandAvatar';
 import { PriceTrendBars } from '../components/PriceTrendBars';
 import { formatPrice, formatPriceDelta } from '../lib/format';
+import { darkTiles } from '../lib/tiles';
 import { getPriceBounds, getPriceColor } from '../lib/priceColor';
 import { getServiceIcon } from '../lib/services';
 import type { FuelType, Station } from '../types';
@@ -187,7 +188,11 @@ export function StationDetailScreen({ stationId }: Props) {
           attributionControl={false}
           className="absolute inset-0 z-0"
         >
-          <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
+          <TileLayer
+            url={darkTiles.url}
+            tileSize={darkTiles.tileSize}
+            zoomOffset={darkTiles.zoomOffset}
+          />
           <MapInvalidator />
           <Marker position={[station.lat, station.lng]} icon={detailPin} />
         </MapContainer>

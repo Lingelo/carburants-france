@@ -75,6 +75,7 @@ export default defineConfig(({ command }) => ({
           {
             urlPattern: ({ url }) =>
               url.hostname.endsWith('basemaps.cartocdn.com') ||
+              url.hostname.endsWith('api.maptiler.com') ||
               url.hostname.endsWith('tile.openstreetmap.org'),
             handler: 'CacheFirst',
             options: {
