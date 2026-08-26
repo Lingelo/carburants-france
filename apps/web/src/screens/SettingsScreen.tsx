@@ -7,6 +7,8 @@ import { useForegroundRefresh } from '../hooks/useForegroundRefresh';
 import { useGeolocationPermission } from '../hooks/useGeolocationPermission';
 import { useI18n, LOCALES } from '../i18n';
 import { Icon } from '../components/Icon';
+import { InstallButton } from '../components/InstallButton';
+import { ScreenHeader } from '../components/ScreenHeader';
 
 export function SettingsScreen() {
   const s = useSettings();
@@ -82,35 +84,9 @@ export function SettingsScreen() {
 
   return (
     <div className="h-full overflow-y-auto">
+      <ScreenHeader title={t('settings.title')} actions={<InstallButton />} />
       <main className="max-w-2xl mx-auto px-md py-lg space-y-lg">
-        <h1 className="text-headline-lg font-semibold text-on-surface">{t('settings.title')}</h1>
-
-        <section className="bg-surface-container-lowest rounded-xl p-md shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)] border border-surface-container-highest">
-          <h2 className="text-headline-md font-semibold text-on-surface mb-sm">{t('settings.startScreen')}</h2>
-          <div className="grid grid-cols-2 gap-2">
-            {(
-              [
-                { v: 'map', label: t('nav.map') },
-                { v: 'stations', label: t('settings.startList') },
-              ] as const
-            ).map(({ v, label }) => (
-              <button
-                key={v}
-                onClick={() => s.setDefaultStart(v)}
-                className={[
-                  'p-3 rounded-lg border text-body-sm transition-colors',
-                  s.defaultStart === v
-                    ? 'bg-secondary text-on-secondary border-secondary'
-                    : 'bg-surface-container border-outline text-on-surface',
-                ].join(' ')}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </section>
-
-        <section className="bg-surface-container-lowest rounded-xl p-md shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)] border border-surface-container-highest">
+        <section className="bg-surface-container-lowest rounded-xl p-md border border-outline-variant">
           <h2 className="text-headline-md font-semibold text-on-surface mb-sm flex items-center gap-2">
             <Icon name="language" size={20} className="text-primary" />
             {t('settings.language')}
@@ -133,7 +109,7 @@ export function SettingsScreen() {
           </div>
         </section>
 
-        <section className="bg-surface-container-lowest rounded-xl p-md shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)] border border-surface-container-highest">
+        <section className="bg-surface-container-lowest rounded-xl p-md border border-outline-variant">
           <h2 className="text-headline-md font-semibold text-on-surface mb-sm">{t('settings.search')}</h2>
           <label className="flex items-start justify-between gap-2 p-2 cursor-pointer">
             <div className="flex-1">
@@ -223,7 +199,7 @@ export function SettingsScreen() {
           </div>
         </section>
 
-        <section className="bg-surface-container-lowest rounded-xl p-md shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)] border border-surface-container-highest">
+        <section className="bg-surface-container-lowest rounded-xl p-md border border-outline-variant">
           <h2 className="text-headline-md font-semibold text-on-surface mb-sm flex items-center gap-2">
             <Icon name="share" className="text-primary" />
             {t('settings.shareApp')}
@@ -240,7 +216,7 @@ export function SettingsScreen() {
           </button>
         </section>
 
-        <section className="bg-surface-container-lowest rounded-xl p-md shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)] border border-surface-container-highest">
+        <section className="bg-surface-container-lowest rounded-xl p-md border border-outline-variant">
           <h2 className="text-headline-md font-semibold text-on-surface mb-sm">{t('settings.data')}</h2>
           <div className="flex items-center justify-between p-2">
             <span className="text-body-lg text-on-surface">{t('settings.lastUpdate')}</span>
@@ -253,7 +229,7 @@ export function SettingsScreen() {
           </p>
         </section>
 
-        <section className="bg-surface-container-lowest rounded-xl p-md shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)] border border-surface-container-highest space-y-2">
+        <section className="bg-surface-container-lowest rounded-xl p-md border border-outline-variant space-y-2">
           <h2 className="text-headline-md font-semibold text-on-surface mb-sm">{t('settings.about')}</h2>
           <p className="text-body-sm text-on-surface-variant flex items-start gap-2">
             <Icon name="info" size={18} />
@@ -299,7 +275,7 @@ export function SettingsScreen() {
         <div
           role="status"
           aria-live="polite"
-          className="fixed bottom-24 md:bottom-6 left-1/2 -translate-x-1/2 z-[1200] bg-inverse-surface text-inverse-on-surface px-4 py-2.5 rounded-full shadow-[0_8px_24px_rgba(22,29,27,0.25)] flex items-center gap-2 text-body-sm font-medium animate-[slideUp_220ms_ease-out]"
+          className="fixed bottom-24 md:bottom-6 left-1/2 -translate-x-1/2 z-[1200] bg-inverse-surface text-inverse-on-surface px-4 py-2.5 rounded-full shadow-[0_8px_24px_rgba(0,0,0,0.25)] flex items-center gap-2 text-body-sm font-medium animate-[slideUp_220ms_ease-out]"
         >
           <Icon name="check_circle" filled size={18} />
           {shareToast}

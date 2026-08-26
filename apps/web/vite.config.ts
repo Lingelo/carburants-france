@@ -24,8 +24,8 @@ export default defineConfig(({ command }) => ({
         scope: BASE,
         start_url: BASE,
         display: 'standalone',
-        background_color: '#f9f9ff',
-        theme_color: '#a33900',
+        background_color: '#121212',
+        theme_color: '#121212',
         icons: [
           {
             src: 'icon.svg',

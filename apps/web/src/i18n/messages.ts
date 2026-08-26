@@ -28,7 +28,6 @@ const fr = {
   'app.subtitle': 'France · Espagne · Portugal',
 
   'nav.map': 'Carte',
-  'nav.stations': 'Stations',
   'nav.favorites': 'Favoris',
   'nav.trends': 'Tendances',
   'nav.settings': 'Réglages',
@@ -47,6 +46,15 @@ const fr = {
   'common.copyLinkBtn': 'Copier le lien',
   'common.linkCopied': 'Lien copié dans le presse-papier',
   'common.stationsCount': '{n} station|{n} stations',
+  'common.h24': '24h/24',
+
+  'chips.fuel': 'Carburant',
+  'chips.sort': 'Tri',
+
+  'route.loading': 'Calcul…',
+  'route.error': "Itinéraire indisponible pour le moment. Réessaie plus tard.",
+  'route.needLocation': "Active ta position pour calculer l'itinéraire.",
+  'route.clear': "Fermer l'itinéraire",
 
   'time.now': "à l'instant",
   'time.minAgo': 'il y a {n} min',
@@ -57,7 +65,8 @@ const fr = {
 
   'station.fallbackName': 'Station',
   'station.fallbackNameId': 'Station {id}',
-  'station.cheapest': 'Le Moins Cher',
+  'station.cheapest': 'Moins cher',
+  'station.moreDetails': 'Plus de détails',
   'station.noFuel': 'Pas de {fuel}',
   'station.viewOnMap': 'VOIR SUR LA CARTE',
   'station.addFav': 'Ajouter aux favoris',
@@ -164,8 +173,6 @@ const fr = {
   'filters.apply': 'Appliquer les filtres',
 
   'settings.title': 'Réglages',
-  'settings.startScreen': 'Écran de démarrage',
-  'settings.startList': 'Liste',
   'settings.language': 'Langue',
   'settings.search': 'Recherche',
   'settings.staleWarn': 'Avertir si données > 72 h',
@@ -222,7 +229,6 @@ const es: Messages = {
   'app.subtitle': 'Francia · España · Portugal',
 
   'nav.map': 'Mapa',
-  'nav.stations': 'Estaciones',
   'nav.favorites': 'Favoritos',
   'nav.trends': 'Tendencias',
   'nav.settings': 'Ajustes',
@@ -241,6 +247,15 @@ const es: Messages = {
   'common.copyLinkBtn': 'Copiar enlace',
   'common.linkCopied': 'Enlace copiado al portapapeles',
   'common.stationsCount': '{n} estación|{n} estaciones',
+  'common.h24': '24/7',
+
+  'chips.fuel': 'Combustible',
+  'chips.sort': 'Ordenar',
+
+  'route.loading': 'Calculando…',
+  'route.error': 'Ruta no disponible por el momento. Inténtalo más tarde.',
+  'route.needLocation': 'Activa tu ubicación para calcular la ruta.',
+  'route.clear': 'Cerrar la ruta',
 
   'time.now': 'ahora mismo',
   'time.minAgo': 'hace {n} min',
@@ -251,7 +266,8 @@ const es: Messages = {
 
   'station.fallbackName': 'Estación',
   'station.fallbackNameId': 'Estación {id}',
-  'station.cheapest': 'La Más Barata',
+  'station.cheapest': 'Más barata',
+  'station.moreDetails': 'Más detalles',
   'station.noFuel': 'Sin {fuel}',
   'station.viewOnMap': 'VER EN EL MAPA',
   'station.addFav': 'Añadir a favoritos',
@@ -357,8 +373,6 @@ const es: Messages = {
   'filters.apply': 'Aplicar filtros',
 
   'settings.title': 'Ajustes',
-  'settings.startScreen': 'Pantalla de inicio',
-  'settings.startList': 'Lista',
   'settings.language': 'Idioma',
   'settings.search': 'Búsqueda',
   'settings.staleWarn': 'Avisar si los datos > 72 h',
@@ -412,7 +426,6 @@ const pt: Messages = {
   'app.subtitle': 'França · Espanha · Portugal',
 
   'nav.map': 'Mapa',
-  'nav.stations': 'Postos',
   'nav.favorites': 'Favoritos',
   'nav.trends': 'Tendências',
   'nav.settings': 'Definições',
@@ -431,6 +444,15 @@ const pt: Messages = {
   'common.copyLinkBtn': 'Copiar link',
   'common.linkCopied': 'Link copiado para a área de transferência',
   'common.stationsCount': '{n} posto|{n} postos',
+  'common.h24': '24/7',
+
+  'chips.fuel': 'Combustível',
+  'chips.sort': 'Ordenar',
+
+  'route.loading': 'A calcular…',
+  'route.error': 'Rota indisponível de momento. Tenta novamente mais tarde.',
+  'route.needLocation': 'Ativa a tua localização para calcular a rota.',
+  'route.clear': 'Fechar a rota',
 
   'time.now': 'agora mesmo',
   'time.minAgo': 'há {n} min',
@@ -441,7 +463,8 @@ const pt: Messages = {
 
   'station.fallbackName': 'Posto',
   'station.fallbackNameId': 'Posto {id}',
-  'station.cheapest': 'O Mais Barato',
+  'station.cheapest': 'Mais barato',
+  'station.moreDetails': 'Mais detalhes',
   'station.noFuel': 'Sem {fuel}',
   'station.viewOnMap': 'VER NO MAPA',
   'station.addFav': 'Adicionar aos favoritos',
@@ -547,8 +570,6 @@ const pt: Messages = {
   'filters.apply': 'Aplicar filtros',
 
   'settings.title': 'Definições',
-  'settings.startScreen': 'Ecrã inicial',
-  'settings.startList': 'Lista',
   'settings.language': 'Idioma',
   'settings.search': 'Pesquisa',
   'settings.staleWarn': 'Avisar se os dados > 72 h',
@@ -603,7 +624,6 @@ const en: Messages = {
   'app.subtitle': 'France · Spain · Portugal',
 
   'nav.map': 'Map',
-  'nav.stations': 'Stations',
   'nav.favorites': 'Favorites',
   'nav.trends': 'Trends',
   'nav.settings': 'Settings',
@@ -622,6 +642,15 @@ const en: Messages = {
   'common.copyLinkBtn': 'Copy link',
   'common.linkCopied': 'Link copied to clipboard',
   'common.stationsCount': '{n} station|{n} stations',
+  'common.h24': '24/7',
+
+  'chips.fuel': 'Fuel',
+  'chips.sort': 'Sort',
+
+  'route.loading': 'Routing…',
+  'route.error': 'Route unavailable right now. Try again later.',
+  'route.needLocation': 'Enable your location to compute the route.',
+  'route.clear': 'Close the route',
 
   'time.now': 'just now',
   'time.minAgo': '{n} min ago',
@@ -633,6 +662,7 @@ const en: Messages = {
   'station.fallbackName': 'Station',
   'station.fallbackNameId': 'Station {id}',
   'station.cheapest': 'Cheapest',
+  'station.moreDetails': 'More details',
   'station.noFuel': 'No {fuel}',
   'station.viewOnMap': 'VIEW ON MAP',
   'station.addFav': 'Add to favorites',
@@ -735,8 +765,6 @@ const en: Messages = {
   'filters.apply': 'Apply filters',
 
   'settings.title': 'Settings',
-  'settings.startScreen': 'Start screen',
-  'settings.startList': 'List',
   'settings.language': 'Language',
   'settings.search': 'Search',
   'settings.staleWarn': 'Warn if data > 72 h',

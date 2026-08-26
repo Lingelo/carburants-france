@@ -1,7 +1,7 @@
 package fr.fuelradar.ui.map
 
 import android.Manifest
-import android.content.pm.PackageManager
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.Animatable
@@ -13,25 +13,27 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
@@ -39,10 +41,13 @@ import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.LocationDisabled
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Route
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material.icons.filled.TripOrigin
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ElevatedFilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -55,7 +60,9 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
@@ -71,7 +78,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.android.gms.location.LocationServices
@@ -93,23 +99,33 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import fr.fuelradar.BuildConfig
 import fr.fuelradar.R
+import fr.fuelradar.data.ServiceLocator
+import fr.fuelradar.data.geo.AddressResult
 import fr.fuelradar.data.model.FuelType
+import fr.fuelradar.data.prefs.SortMode
+import fr.fuelradar.data.route.RouteState
 import fr.fuelradar.domain.formatDistance
 import fr.fuelradar.domain.formatPrice
 import fr.fuelradar.domain.formatPriceEuro
 import fr.fuelradar.domain.haversineKm
 import fr.fuelradar.domain.priceColor
-import fr.fuelradar.data.ServiceLocator
-import fr.fuelradar.data.geo.AddressResult
-import fr.fuelradar.data.route.RouteState
 import fr.fuelradar.ui.common.AddressSearchBar
 import fr.fuelradar.ui.common.BrandLogo
 import fr.fuelradar.ui.common.hasFineLocation
+import fr.fuelradar.ui.common.relativeTime
 import fr.fuelradar.ui.common.rememberLocationGranted
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
 import kotlin.math.abs
 
 private const val MAX_PINS = 150
+
+/** One row of the draggable station sheet (browse: distance from the search
+ *  centre; route mode: progression along the trip). */
+private data class SheetRow(
+    val item: StationClusterItem,
+    val distanceKm: Double,
+)
 
 @OptIn(MapsComposeExperimentalApi::class)
 @Composable
@@ -138,6 +154,7 @@ fun MapScreen(
     val target by viewModel.target.collectAsStateWithLifecycle()
     val route by viewModel.routeState.collectAsStateWithLifecycle()
     val routeInput by viewModel.routeInput.collectAsStateWithLifecycle()
+    val favorites by viewModel.favorites.collectAsStateWithLifecycle(emptySet())
     // Station flagged by "view on map": bounce its pin, then release after a moment.
     val focusId by ServiceLocator.filters.focusStationId.collectAsStateWithLifecycle(null)
     LaunchedEffect(focusId) {
@@ -147,6 +164,16 @@ fun MapScreen(
         }
     }
     var showFilters by remember { mutableStateOf(false) }
+    // Station popover (spec §3): opened by tapping a pin; closed by the X, a tap
+    // on the map, or back. Saveable so it survives a configuration change.
+    var selectedStationId by rememberSaveable { mutableStateOf<Long?>(null) }
+    BackHandler(enabled = selectedStationId != null) { selectedStationId = null }
+    // Entering or leaving route mode changes the map context: dismiss the popover
+    // on the TRANSITION only (drop(1) skips the initial emission, so a restored
+    // popover isn't closed right away).
+    LaunchedEffect(Unit) {
+        snapshotFlow { route.active }.drop(1).collect { selectedStationId = null }
+    }
     // Cold-start framing (no saved location yet): a wide Western-Europe view
     // covering France, Spain and Portugal. Once a location is known the camera
     // jumps to it (see the target effect below).
@@ -231,8 +258,13 @@ fun MapScreen(
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
-            // Native blue "my location" dot so the user sees where they are (#7).
-            properties = MapProperties(isMyLocationEnabled = locationGranted.value),
+            onMapClick = { selectedStationId = null },
+            properties = MapProperties(
+                // Native blue "my location" dot so the user sees where they are (#7).
+                isMyLocationEnabled = locationGranted.value,
+                // Dark styling (spec §4) — null on failure = default style.
+                mapStyleOptions = rememberDarkMapStyle(),
+            ),
             uiSettings = MapUiSettings(
                 zoomControlsEnabled = false,
                 mapToolbarEnabled = false,
@@ -244,12 +276,12 @@ fun MapScreen(
             ),
         ) {
             if (route.active && route.hasRoute) {
-                // Route mode: the trip line + the stations selected along it.
-                Polyline(
-                    points = route.routePoints.map { LatLng(it.lat, it.lng) },
-                    color = MaterialTheme.colorScheme.primary,
-                    width = 12f,
-                )
+                // Route mode: neon trip line (wide translucent glow + thin vivid
+                // core, spec §3) + the stations selected along it.
+                val tripPoints = route.routePoints.map { LatLng(it.lat, it.lng) }
+                val accent = MaterialTheme.colorScheme.primary
+                Polyline(points = tripPoints, color = accent.copy(alpha = 0.25f), width = 24f)
+                Polyline(points = tripPoints, color = accent, width = 8f)
                 // #6: a glowing segment traveling from start to end, looping — an
                 // animated "comet" drawn on top of the route line.
                 val pulse = rememberInfiniteTransition(label = "routePulse")
@@ -269,11 +301,7 @@ fun MapScreen(
                 val from = (head - window).coerceAtLeast(0)
                 val segment = pts.subList(from, head + 1).map { LatLng(it.lat, it.lng) }
                 if (segment.size >= 2) {
-                    Polyline(
-                        points = segment,
-                        color = MaterialTheme.colorScheme.tertiary,
-                        width = 18f,
-                    )
+                    Polyline(points = segment, color = accent, width = 18f)
                 }
                 route.stations.take(MAX_PINS).forEach { rs ->
                     key(rs.station.id) {
@@ -282,12 +310,48 @@ fun MapScreen(
                             position = LatLng(rs.station.lat, rs.station.lng),
                         )
                         val lbl = rs.price?.let { "${formatPrice(it)} €" }
-                        val c = rs.price?.let { priceColor(it, route.pMin, route.pMax) } ?: Color.Gray
-                        MarkerComposable(
-                            keys = arrayOf(rs.station.id),
-                            state = ms,
-                            onClick = { onOpenStation(rs.station.id); true },
-                        ) { PricePin(lbl, c) }
+                        val c = rs.price?.let { priceColor(it, route.pMin, route.pMax) }
+                            ?: MaterialTheme.colorScheme.onSurfaceVariant
+                        if (rs.station.id == selectedStationId) {
+                            // Selected while its popover is open: accent ring +
+                            // bounce (quantized keys force re-rasterization).
+                            val transition = rememberInfiniteTransition(label = "routeSel")
+                            val scale by transition.animateFloat(
+                                initialValue = 1f,
+                                targetValue = 1.22f,
+                                animationSpec = infiniteRepeatable(tween(500), RepeatMode.Reverse),
+                                label = "scale",
+                            )
+                            MarkerComposable(
+                                keys = arrayOf(rs.station.id, (scale * 12).toInt()),
+                                state = ms,
+                                onClick = { selectedStationId = rs.station.id; true },
+                            ) {
+                                Box(modifier = Modifier.padding(10.dp)) {
+                                    StationPin(
+                                        brand = rs.station.brand,
+                                        priceLabel = lbl,
+                                        priceColor = c,
+                                        selected = true,
+                                        cheapest = rs.station.id == route.cheapestId,
+                                        scale = scale,
+                                    )
+                                }
+                            }
+                        } else {
+                            MarkerComposable(
+                                keys = arrayOf(rs.station.id),
+                                state = ms,
+                                onClick = { selectedStationId = rs.station.id; true },
+                            ) {
+                                StationPin(
+                                    brand = rs.station.brand,
+                                    priceLabel = lbl,
+                                    priceColor = c,
+                                    cheapest = rs.station.id == route.cheapestId,
+                                )
+                            }
+                        }
                     }
                 }
                 // Start / end badges — clearly visible endpoints.
@@ -296,13 +360,21 @@ fun MapScreen(
                 key("route-start") {
                     val startState = rememberMarkerState(position = LatLng(sp.lat, sp.lng))
                     MarkerComposable(keys = arrayOf("start", sp.lat, sp.lng), state = startState) {
-                        EndpointBadge(MaterialTheme.colorScheme.tertiary, Icons.Filled.TripOrigin)
+                        EndpointBadge(
+                            color = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                            icon = Icons.Filled.TripOrigin,
+                        )
                     }
                 }
                 key("route-end") {
                     val endState = rememberMarkerState(position = LatLng(ep.lat, ep.lng))
                     MarkerComposable(keys = arrayOf("end", ep.lat, ep.lng), state = endState) {
-                        EndpointBadge(MaterialTheme.colorScheme.error, Icons.Filled.Flag)
+                        EndpointBadge(
+                            color = MaterialTheme.colorScheme.error,
+                            contentColor = MaterialTheme.colorScheme.onError,
+                            icon = Icons.Filled.Flag,
+                        )
                     }
                 }
             } else {
@@ -314,7 +386,7 @@ fun MapScreen(
                 strokeWidth = 3f,
                 fillColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.06f),
             )
-            // Individual price pins (no clustering). The cheapest one bounces.
+            // Individual logo pins (no clustering). The cheapest one bounces.
             // Each marker is wrapped in key(station.id) so Compose disposes the
             // markers that leave the set when the location/radius changes —
             // otherwise MarkerComposable leaves ghost pins from the old search.
@@ -325,8 +397,14 @@ fun MapScreen(
                         position = LatLng(item.station.lat, item.station.lng),
                     )
                     val label = item.price?.let { "${formatPrice(it)} €" }
-                    val color = item.price?.let { priceColor(it, state.pMin, state.pMax) } ?: Color.Gray
-                    if (item.station.id == state.cheapestId || item.station.id == focusId) {
+                    val color = item.price?.let { priceColor(it, state.pMin, state.pMax) }
+                        ?: MaterialTheme.colorScheme.onSurfaceVariant
+                    val cheapest = item.station.id == state.cheapestId
+                    // Highlighted = flagged by "view on map" OR selected via the
+                    // open popover: accent ring + bounce.
+                    val highlighted = item.station.id == focusId ||
+                        item.station.id == selectedStationId
+                    if (cheapest || highlighted) {
                         val transition = rememberInfiniteTransition(label = "bounce")
                         val scale by transition.animateFloat(
                             initialValue = 1f,
@@ -336,23 +414,34 @@ fun MapScreen(
                         )
                         // Quantized scale in the marker keys forces re-rasterization
                         // each step, so the pin visibly bounces. The padding keeps the
-                        // rasterized bounds large enough so the scaled pill isn't clipped.
+                        // rasterized bounds large enough so the scaled pin isn't clipped.
                         MarkerComposable(
                             keys = arrayOf(item.station.id, (scale * 12).toInt()),
                             state = markerState,
-                            onClick = { onOpenStation(item.station.id); true },
+                            onClick = { selectedStationId = item.station.id; true },
                         ) {
-                            Box(modifier = Modifier.padding(8.dp)) {
-                                PricePin(label, color, scale = scale)
+                            Box(modifier = Modifier.padding(10.dp)) {
+                                StationPin(
+                                    brand = item.station.brand,
+                                    priceLabel = label,
+                                    priceColor = color,
+                                    selected = highlighted,
+                                    cheapest = cheapest,
+                                    scale = scale,
+                                )
                             }
                         }
                     } else {
                         MarkerComposable(
                             keys = arrayOf(item.station.id),
                             state = markerState,
-                            onClick = { onOpenStation(item.station.id); true },
+                            onClick = { selectedStationId = item.station.id; true },
                         ) {
-                            PricePin(label, color)
+                            StationPin(
+                                brand = item.station.brand,
+                                priceLabel = label,
+                                priceColor = color,
+                            )
                         }
                     }
                 }
@@ -360,7 +449,7 @@ fun MapScreen(
             }
         }
 
-        // Search + fuel pills overlay.
+        // Search + route panel overlay.
         Column(
             modifier = Modifier.fillMaxWidth().padding(12.dp).align(Alignment.TopCenter),
         ) {
@@ -378,9 +467,8 @@ fun MapScreen(
             } else {
                 Surface(
                     shape = MaterialTheme.shapes.extraLarge,
-                    tonalElevation = 3.dp,
-                    shadowElevation = 3.dp,
-                    color = MaterialTheme.colorScheme.surface,
+                    shadowElevation = 6.dp,
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 ) {
                     AddressSearchBar(
                         query = state.query,
@@ -415,16 +503,94 @@ fun MapScreen(
             // the map uncluttered.
         }
 
+        val routeMode = route.active && route.hasRoute
+
+        // Popover data for the tapped pin (browse: distance from the search
+        // centre; route mode: progression along the trip).
+        val selectedRow = remember(selectedStationId, state.items, state.center, routeMode, route.stations) {
+            val id = selectedStationId
+            when {
+                id == null -> null
+                routeMode -> route.stations.firstOrNull { it.station.id == id }
+                    ?.let { SheetRow(StationClusterItem(it.station, it.price), it.progressKm) }
+                else -> state.items.firstOrNull { it.station.id == id }
+                    ?.let {
+                        SheetRow(it, haversineKm(state.center.lat, state.center.lng, it.station.lat, it.station.lng))
+                    }
+            }
+        }
+        // The tapped station left the set (filters/radius/route changed): drop
+        // the stale selection instead of keeping a ghost popover state.
+        LaunchedEffect(selectedStationId, selectedRow) {
+            if (selectedStationId != null && selectedRow == null) selectedStationId = null
+        }
+
+        if (selectedRow != null) {
+            // Popover replaces the sheet at the bottom — cleanest with the
+            // sheet's internal height state (nothing to coordinate; the sheet
+            // reopens at its base detent once the popover closes).
+            StationPopover(
+                item = selectedRow.item,
+                distanceKm = selectedRow.distanceKm,
+                selectedFuel = state.filters.fuel,
+                priceColor = selectedRow.item.price?.let {
+                    priceColor(
+                        it,
+                        if (routeMode) route.pMin else state.pMin,
+                        if (routeMode) route.pMax else state.pMax,
+                    )
+                } ?: MaterialTheme.colorScheme.onSurface,
+                onClose = { selectedStationId = null },
+                onDetails = { onOpenStation(selectedRow.item.station.id) },
+                onRoute = {
+                    viewModel.routeToStation(selectedRow.item.station)
+                    selectedStationId = null
+                },
+                modifier = Modifier.align(Alignment.BottomCenter),
+            )
+        } else if (!route.active || routeMode) {
+            // Draggable station sheet (map-first fusion of the old Stations tab):
+            // same data as the pins, ordered by the active sort — or, in route
+            // mode, the stations along the trip ordered by progression.
+            val sheetRows = remember(state.items, state.filters.sort, state.center, routeMode, route.stations) {
+                if (routeMode) {
+                    route.stations.map { SheetRow(StationClusterItem(it.station, it.price), it.progressKm) }
+                } else {
+                    val rows = state.items.map {
+                        SheetRow(it, haversineKm(state.center.lat, state.center.lng, it.station.lat, it.station.lng))
+                    }
+                    when (state.filters.sort) {
+                        SortMode.PRICE -> rows.sortedBy { it.item.price ?: Double.MAX_VALUE }
+                        SortMode.DISTANCE -> rows.sortedBy { it.distanceKm }
+                    }
+                }
+            }
+            StationSheet(
+                rows = sheetRows,
+                cheapestId = if (routeMode) route.cheapestId else state.cheapestId,
+                pMin = if (routeMode) route.pMin else state.pMin,
+                pMax = if (routeMode) route.pMax else state.pMax,
+                focusId = focusId,
+                favorites = favorites,
+                loading = if (routeMode) route.loading else state.loading,
+                onToggleFavorite = viewModel::toggleFavorite,
+                onOpen = { onOpenStation(it.station.id) },
+                modifier = Modifier.align(Alignment.BottomCenter),
+            )
+        }
     }
 }
 
 @Composable
 private fun StationSheet(
-    stations: List<StationClusterItem>,
-    center: fr.fuelradar.domain.Coords,
+    rows: List<SheetRow>,
     cheapestId: Long?,
     pMin: Double,
     pMax: Double,
+    focusId: Long?,
+    favorites: Set<Long>,
+    loading: Boolean,
+    onToggleFavorite: (Long) -> Unit,
     onOpen: (StationClusterItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -441,8 +607,7 @@ private fun StationSheet(
             .fillMaxWidth()
             .height(with(density) { heightAnim.value.toDp() }),
         shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 3.dp,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
         shadowElevation = 8.dp,
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -475,10 +640,19 @@ private fun StationSheet(
                         .background(MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(2.dp)),
                 )
                 Text(
-                    "${stations.size} stations",
+                    stringResource(R.string.stations_count, rows.size),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 8.dp),
+                )
+            }
+            if (rows.isEmpty() && !loading) {
+                Text(
+                    stringResource(R.string.no_stations_area),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp),
                 )
             }
             LazyColumn(
@@ -486,15 +660,18 @@ private fun StationSheet(
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                items(stations, key = { it.station.id }) { item ->
+                items(rows, key = { it.item.station.id }) { row ->
                     MapStationRow(
-                        item = item,
-                        distanceKm = haversineKm(center.lat, center.lng, item.station.lat, item.station.lng),
-                        cheapest = item.station.id == cheapestId,
-                        color = item.price?.let { priceColor(it, pMin, pMax) }
+                        item = row.item,
+                        distanceKm = row.distanceKm,
+                        cheapest = row.item.station.id == cheapestId,
+                        selected = row.item.station.id == focusId,
+                        favorite = favorites.contains(row.item.station.id),
+                        priceColor = row.item.price?.let { priceColor(it, pMin, pMax) }
                             ?: MaterialTheme.colorScheme.onSurface,
+                        onToggleFavorite = { onToggleFavorite(row.item.station.id) },
                         onClick = {
-                            onOpen(item)
+                            onOpen(row.item)
                             scope.launch { heightAnim.animateTo(basePx) }
                         },
                     )
@@ -504,97 +681,343 @@ private fun StationSheet(
     }
 }
 
+/**
+ * Station popover (spec §3), opened by tapping a pin: bottom card `surface-2`,
+ * header (avatar + name + `distance • price` + 24/7 mini-chip), outline chips
+ * (selected fuel price / distance / freshness), other-fuel price chips, then
+ * "More details" (white 10 % pill) and "Itinéraire" (accent) CTAs.
+ */
+@Composable
+private fun StationPopover(
+    item: StationClusterItem,
+    distanceKm: Double,
+    selectedFuel: FuelType,
+    priceColor: Color,
+    onClose: () -> Unit,
+    onDetails: () -> Unit,
+    onRoute: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val st = item.station
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        shadowElevation = 16.dp,
+    ) {
+        // 20.dp en bas : même règle que le popover web (padding >= radius + 4)
+        // pour que les CTA ne paraissent pas collés au bord.
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 20.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                BrandLogo(st.brand, size = 44.dp)
+                Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
+                    Text(
+                        st.brand ?: stringResource(R.string.station_fallback),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            formatDistance(distanceKm),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                        )
+                        item.price?.let {
+                            Text(
+                                " • ",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Text(
+                                formatPriceEuro(it),
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = priceColor,
+                                maxLines = 1,
+                            )
+                        }
+                        if (st.h24 == true) {
+                            Spacer(Modifier.width(6.dp))
+                            Surface(
+                                shape = RoundedCornerShape(50),
+                                color = Color.Transparent,
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                            ) {
+                                Text(
+                                    stringResource(R.string.h24_chip),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp),
+                                )
+                            }
+                        }
+                    }
+                }
+                IconButton(onClick = onClose) {
+                    Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.close))
+                }
+            }
+
+            // Outline chips: selected fuel price / distance / data freshness.
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 12.dp)
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                item.price?.let {
+                    OutlineChip("${selectedFuel.label} ${formatPrice(it)} €", priceColor)
+                }
+                OutlineChip(formatDistance(distanceKm))
+                selectedFuel.dateIn(st.fuels)?.let { OutlineChip(relativeTime(it)) }
+            }
+
+            // Other fuels sold at this station (same policy as StationCard).
+            val others = FuelType.entries
+                .filter { it != selectedFuel && it.availableIn(st.fuels) }
+                .take(3)
+            if (others.isNotEmpty()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp)
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    others.forEach { ft ->
+                        Surface(
+                            color = MaterialTheme.colorScheme.surfaceVariant,
+                            shape = RoundedCornerShape(6.dp),
+                        ) {
+                            Text(
+                                "${ft.label} ${formatPrice(ft.priceIn(st.fuels)!!)} €",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
+                            )
+                        }
+                    }
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = 14.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                // "More details" — white 10 % pill, primary text (spec §3).
+                Button(
+                    onClick = onDetails,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White.copy(alpha = 0.10f),
+                        contentColor = MaterialTheme.colorScheme.onSurface,
+                    ),
+                ) {
+                    Text(stringResource(R.string.more_details), fontWeight = FontWeight.SemiBold)
+                }
+                // "Itinéraire" — accent CTA (theme default = primary/onPrimary).
+                Button(onClick = onRoute, modifier = Modifier.weight(1f)) {
+                    Icon(
+                        Icons.Filled.Route,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Text("  " + stringResource(R.string.directions), fontWeight = FontWeight.SemiBold)
+                }
+            }
+        }
+    }
+}
+
+/** Pill chip with a subtle outline (popover metadata row). */
+@Composable
+private fun OutlineChip(text: String, textColor: Color = MaterialTheme.colorScheme.onSurface) {
+    Surface(
+        shape = RoundedCornerShape(50),
+        color = Color.Transparent,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    ) {
+        Text(
+            text,
+            style = MaterialTheme.typography.labelMedium,
+            color = textColor,
+            maxLines = 1,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+        )
+    }
+}
+
+/** Sheet list item (spec §3): 44dp circular avatar, brand name, `distance • price`
+ *  (price tier-colored), optional 24/7 mini-chip, favorite star + chevron. */
 @Composable
 private fun MapStationRow(
     item: StationClusterItem,
     distanceKm: Double,
     cheapest: Boolean,
-    color: Color,
+    selected: Boolean,
+    favorite: Boolean,
+    priceColor: Color,
+    onToggleFavorite: () -> Unit,
     onClick: () -> Unit,
 ) {
-    androidx.compose.material3.Card(
+    Surface(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
-        elevation = androidx.compose.material3.CardDefaults.cardElevation(defaultElevation = 1.dp),
+        shape = RoundedCornerShape(14.dp),
+        color = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+        else MaterialTheme.colorScheme.surfaceContainerHigh,
+        border = if (selected) BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary)
+        else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            BrandLogo(item.station.brand, size = 40.dp)
-            Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
+            BrandLogo(item.station.brand, size = 44.dp)
+            Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
                 Text(
                     item.station.brand ?: item.station.city,
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
                 )
-                Text(
-                    "${formatDistance(distanceKm)} · ${item.station.cp} ${item.station.city}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        formatDistance(distanceKm),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                    )
+                    item.price?.let {
+                        Text(
+                            " • ",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Text(
+                            formatPriceEuro(it),
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = priceColor,
+                            maxLines = 1,
+                        )
+                    }
+                    if (item.station.h24 == true) {
+                        Spacer(Modifier.width(6.dp))
+                        Surface(
+                            shape = RoundedCornerShape(50),
+                            color = Color.Transparent,
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                        ) {
+                            Text(
+                                stringResource(R.string.h24_chip),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp),
+                            )
+                        }
+                    }
+                }
                 if (cheapest) {
-                    Box(
-                        modifier = Modifier
-                            .padding(top = 3.dp)
-                            .background(MaterialTheme.colorScheme.tertiaryContainer, RoundedCornerShape(6.dp))
-                            .padding(horizontal = 6.dp, vertical = 2.dp),
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(top = 3.dp),
                     ) {
                         Text(
                             stringResource(R.string.cheapest),
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onTertiaryContainer,
+                            color = MaterialTheme.colorScheme.onPrimary,
                             fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                         )
                     }
                 }
             }
-            item.price?.let {
+            IconButton(onClick = onToggleFavorite) {
+                Icon(
+                    if (favorite) Icons.Filled.Star else Icons.Filled.StarBorder,
+                    contentDescription = stringResource(R.string.favorite),
+                    tint = if (favorite) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Icon(
+                Icons.Filled.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+/**
+ * Map pin (spec §3): white circle with the brand logo (monogram fallback),
+ * white 2dp border — accent when [selected] — soft shadow, and a price badge
+ * pill below (surface-2, subtle border — accent when [cheapest] — tier-colored
+ * price text).
+ */
+@Composable
+private fun StationPin(
+    brand: String?,
+    priceLabel: String?,
+    priceColor: Color,
+    selected: Boolean = false,
+    cheapest: Boolean = false,
+    scale: Float = 1f,
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.scale(scale),
+    ) {
+        Surface(
+            shape = CircleShape,
+            color = Color.White,
+            border = BorderStroke(
+                2.dp,
+                if (selected) MaterialTheme.colorScheme.primary else Color.White,
+            ),
+            shadowElevation = 4.dp,
+            modifier = Modifier.size(40.dp),
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                BrandLogo(brand, size = 34.dp)
+            }
+        }
+        if (priceLabel != null) {
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                border = BorderStroke(
+                    1.dp,
+                    if (cheapest) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.outlineVariant,
+                ),
+                shadowElevation = 2.dp,
+                modifier = Modifier.padding(top = 3.dp),
+            ) {
                 Text(
-                    formatPriceEuro(it),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = if (cheapest) MaterialTheme.colorScheme.tertiary else color,
+                    text = priceLabel,
+                    color = priceColor,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 11.sp,
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                 )
             }
         }
     }
 }
 
-@Composable
-private fun PricePin(priceLabel: String?, color: Color, scale: Float = 1f) {
-    if (priceLabel == null) {
-        Box(
-            modifier = Modifier
-                .scale(scale)
-                .padding(2.dp)
-                .background(color, RoundedCornerShape(8.dp))
-                .border(2.dp, Color.White, RoundedCornerShape(8.dp))
-                .padding(6.dp),
-        )
-        return
-    }
-    Surface(
-        modifier = Modifier.scale(scale),
-        color = color,
-        shape = RoundedCornerShape(8.dp),
-        border = androidx.compose.foundation.BorderStroke(2.dp, Color.White),
-    ) {
-        Text(
-            text = priceLabel,
-            color = Color.White,
-            fontWeight = FontWeight.Bold,
-            fontSize = 12.sp,
-            modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
-        )
-    }
-}
-
 /** Circular start/end badge shown at the route endpoints. */
 @Composable
-private fun EndpointBadge(color: Color, icon: ImageVector) {
+private fun EndpointBadge(color: Color, contentColor: Color, icon: ImageVector) {
     Surface(
         color = color,
         shape = CircleShape,
@@ -605,7 +1028,7 @@ private fun EndpointBadge(color: Color, icon: ImageVector) {
         Icon(
             icon,
             contentDescription = null,
-            tint = Color.White,
+            tint = contentColor,
             modifier = Modifier.padding(6.dp),
         )
     }
@@ -649,9 +1072,8 @@ private fun RouteInputPanel(
 
     Surface(
         shape = MaterialTheme.shapes.extraLarge,
-        tonalElevation = 3.dp,
-        shadowElevation = 3.dp,
-        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = 6.dp,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
     ) {
         Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {

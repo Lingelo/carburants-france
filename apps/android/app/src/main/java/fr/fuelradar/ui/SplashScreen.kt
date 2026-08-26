@@ -22,14 +22,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import fr.fuelradar.R
 
-/** Branded launch screen: teal gradient, the pump logo, the app name + tagline. */
+/** Branded launch screen: dark gradient, the pump logo, the app name + tagline. */
 @Composable
 fun SplashScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(
-                Brush.verticalGradient(listOf(Color(0xFF00857A), Color(0xFF00564E))),
+                Brush.verticalGradient(listOf(Color(0xFF191919), Color(0xFF121212))),
             ),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -41,14 +41,14 @@ fun SplashScreen() {
         )
         Text(
             stringResource(R.string.app_name),
-            color = Color.White,
+            color = Color(0xFFF5F6F4),
             fontWeight = FontWeight.Bold,
             fontSize = 30.sp,
         )
         Spacer(Modifier.height(8.dp))
         Text(
             stringResource(R.string.app_tagline),
-            color = Color.White.copy(alpha = 0.82f),
+            color = Color(0xFFA3A9A6),
             fontSize = 14.sp,
             textAlign = TextAlign.Center,
         )

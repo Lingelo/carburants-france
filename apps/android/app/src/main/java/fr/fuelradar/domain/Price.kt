@@ -16,22 +16,24 @@ fun priceBounds(prices: List<Double>): Pair<Double, Double> {
     return pMin to pMax
 }
 
-// [pos, hue, saturation%, lightness%]
+// [pos, hue, saturation%, lightness%] — lightness raised to 55-65 % so the
+// gradient stays readable as text on the dark background (redesign spec §2);
+// endpoints track the tier tokens (#4ADE80 → #FBBF24 → #F87171).
 private val STOPS = listOf(
-    doubleArrayOf(0.0, 142.0, 71.0, 40.0),
-    doubleArrayOf(0.12, 120.0, 65.0, 42.0),
-    doubleArrayOf(0.25, 90.0, 70.0, 44.0),
-    doubleArrayOf(0.38, 65.0, 80.0, 46.0),
-    doubleArrayOf(0.5, 48.0, 90.0, 48.0),
-    doubleArrayOf(0.62, 35.0, 90.0, 48.0),
-    doubleArrayOf(0.75, 20.0, 85.0, 48.0),
-    doubleArrayOf(0.88, 5.0, 75.0, 45.0),
-    doubleArrayOf(1.0, 0.0, 80.0, 30.0),
+    doubleArrayOf(0.0, 142.0, 69.0, 58.0),
+    doubleArrayOf(0.12, 120.0, 62.0, 58.0),
+    doubleArrayOf(0.25, 90.0, 62.0, 55.0),
+    doubleArrayOf(0.38, 65.0, 75.0, 55.0),
+    doubleArrayOf(0.5, 46.0, 96.0, 56.0),
+    doubleArrayOf(0.62, 35.0, 92.0, 58.0),
+    doubleArrayOf(0.75, 20.0, 88.0, 62.0),
+    doubleArrayOf(0.88, 8.0, 86.0, 65.0),
+    doubleArrayOf(1.0, 0.0, 91.0, 71.0),
 )
 
 /** Map a price to a color based on [pMin]..[pMax]. */
 fun priceColor(price: Double, pMin: Double, pMax: Double): Color {
-    if (pMax == pMin) return Color.hsl(142f, 0.71f, 0.45f)
+    if (pMax == pMin) return Color.hsl(142f, 0.69f, 0.58f)
     val t = ((price - pMin) / (pMax - pMin)).coerceIn(0.0, 1.0)
     var i = 0
     while (i < STOPS.size - 2 && STOPS[i + 1][0] < t) i++

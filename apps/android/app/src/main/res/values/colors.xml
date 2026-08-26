@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="splash_teal">#00564E</color>
+    <!-- Dark-only redesign: window/splash background matches the app bg token. -->
+    <color name="splash_dark">#121212</color>
 </resources>

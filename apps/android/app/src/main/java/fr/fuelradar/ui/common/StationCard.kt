@@ -87,13 +87,13 @@ fun StationCard(
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
         border = BorderStroke(
             1.dp,
-            if (cheapest) MaterialTheme.colorScheme.tertiary.copy(alpha = 0.4f)
-            else MaterialTheme.colorScheme.surfaceVariant,
+            if (cheapest) MaterialTheme.colorScheme.primary
+            else MaterialTheme.colorScheme.outlineVariant,
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (cheapest) 3.dp else 1.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
         Box {
             Column(modifier = Modifier.padding(16.dp)) {
@@ -199,7 +199,7 @@ fun StationCard(
 
                 HorizontalDivider(
                     modifier = Modifier.padding(vertical = 10.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    color = MaterialTheme.colorScheme.outlineVariant,
                 )
 
                 Row(
@@ -250,16 +250,17 @@ fun StationCard(
             }
 
             if (cheapest) {
+                // Accent ribbon (spec §3: "cheapest" badge in accent).
                 Surface(
                     modifier = Modifier.align(Alignment.TopEnd),
-                    color = MaterialTheme.colorScheme.tertiaryContainer,
+                    color = MaterialTheme.colorScheme.primary,
                     shape = RoundedCornerShape(bottomStart = 10.dp),
                 ) {
                     Text(
                         stringResource(R.string.cheapest),
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onTertiaryContainer,
+                        color = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp),
                     )
                 }

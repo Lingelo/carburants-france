@@ -5,7 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocalGasStation
 import androidx.compose.material3.Icon
@@ -93,7 +93,7 @@ fun BrandLogo(brand: String?, size: Dp, modifier: Modifier = Modifier) {
 
     val monogram: @Composable () -> Unit = {
         Box(
-            modifier = Modifier.size(size).background(brandColor(brand), RoundedCornerShape(10.dp)),
+            modifier = Modifier.size(size).background(brandColor(brand), CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             val letter = brand?.trim()?.take(1)?.uppercase().orEmpty()
@@ -166,8 +166,10 @@ private fun RemoteImage(
 
 @Composable
 private fun LogoFrame(size: Dp, modifier: Modifier, content: @Composable () -> Unit) {
+    // Circular avatar, white background kept on purpose: brand logos need the
+    // light plate to stay legible on the dark theme (spec §4).
     Box(
-        modifier = modifier.size(size).clip(RoundedCornerShape(10.dp)).background(Color.White),
+        modifier = modifier.size(size).clip(CircleShape).background(Color.White),
         contentAlignment = Alignment.Center,
     ) { content() }
 }

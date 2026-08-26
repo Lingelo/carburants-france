@@ -58,7 +58,6 @@ import kotlinx.coroutines.launch
 
 private val STARTUP_TABS = listOf(
     "map" to R.string.tab_map,
-    "stations" to R.string.tab_stations,
     "favorites" to R.string.tab_favorites,
     "trends" to R.string.tab_trends,
 )
@@ -275,9 +274,9 @@ private fun SettingsCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceVariant),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 10.dp)) {
@@ -308,7 +307,8 @@ private fun ChoiceGrid(
                         onClick = { onSelect(value) },
                         modifier = Modifier.weight(1f),
                         shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp),
-                        color = if (isSel) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surface,
+                        color = if (isSel) MaterialTheme.colorScheme.secondary
+                        else MaterialTheme.colorScheme.surfaceContainerHighest,
                         border = if (isSel) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                     ) {
                         Text(

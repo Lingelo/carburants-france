@@ -61,14 +61,14 @@ import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-/** Web-parity fuel palette (apps/web TrendsScreen FUEL_COLORS). */
+/** Web-parity fuel palette, lightened for the dark background (spec §5). */
 private val FUEL_COLORS = mapOf(
-    "Gazole" to Color(0xFFEA580C),
-    "E10" to Color(0xFF0D9488),
-    "SP95" to Color(0xFF16A34A),
-    "SP98" to Color(0xFF2563EB),
-    "E85" to Color(0xFF7C3AED),
-    "GPLc" to Color(0xFF525252),
+    "Gazole" to Color(0xFFFB923C),
+    "E10" to Color(0xFF2DD4BF),
+    "SP95" to Color(0xFF4ADE80),
+    "SP98" to Color(0xFF60A5FA),
+    "E85" to Color(0xFFA78BFA),
+    "GPLc" to Color(0xFFA3A3A3),
 )
 
 /** A single [epoch ms, price] sample. */
@@ -266,9 +266,8 @@ fun TrendsScreen(viewModel: TrendsViewModel = viewModel()) {
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.surface,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceVariant),
-            tonalElevation = 1.dp,
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
@@ -316,7 +315,8 @@ private fun Pill(text: String, selected: Boolean, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
         shape = RoundedCornerShape(50),
-        color = if (selected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surface,
+        color = if (selected) MaterialTheme.colorScheme.secondary
+        else MaterialTheme.colorScheme.surfaceContainerHigh,
         border = if (selected) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
         Text(
@@ -341,10 +341,10 @@ private fun KpiCard(
     Surface(
         onClick = onClick,
         shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.surface,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
         border = BorderStroke(
             1.dp,
-            if (active) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant,
+            if (active) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outlineVariant,
         ),
         modifier = Modifier.width(150.dp),
     ) {

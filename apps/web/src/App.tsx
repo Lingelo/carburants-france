@@ -3,12 +3,10 @@ import { I18nProvider } from './i18n';
 import { FiltersProvider, useFilters } from './state/FiltersContext';
 import { ViewProvider, useViewNav } from './state/ViewContext';
 import { FavoritesProvider } from './state/FavoritesContext';
-import { SettingsProvider, useSettings } from './state/SettingsContext';
-import { TopAppBar } from './components/TopAppBar';
+import { SettingsProvider } from './state/SettingsContext';
 import { BottomNavBar } from './components/BottomNavBar';
 import { UpdateBanner } from './components/UpdateBanner';
 import { MapScreen } from './screens/MapScreen';
-import { StationsScreen } from './screens/StationsScreen';
 import { StationDetailScreen } from './screens/StationDetailScreen';
 import { FavoritesScreen } from './screens/FavoritesScreen';
 import { TrendsScreen } from './screens/TrendsScreen';
@@ -18,16 +16,6 @@ import { clearZoneShareFromUrl } from './lib/shareUrl';
 
 function Bootstrap() {
   const { setUserLocation, setSearchLabel, hydratedFromShare, userLocation } = useFilters();
-  const settings = useSettings();
-  const nav = useViewNav();
-
-  useEffect(() => {
-    if (settings.defaultStart === 'stations' && nav.view.kind === 'map') {
-      nav.goStations();
-    }
-    // Run once on mount
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -76,8 +64,6 @@ function Router() {
   switch (view.kind) {
     case 'map':
       return <MapScreen />;
-    case 'stations':
-      return <StationsScreen />;
     case 'favorites':
       return <FavoritesScreen />;
     case 'trends':
@@ -98,8 +84,7 @@ export function App() {
           <ViewProvider>
             <Bootstrap />
             <div className="h-screen w-screen overflow-hidden flex flex-col bg-background text-on-background">
-              <TopAppBar />
-              <main className="flex-grow relative mt-16 mb-[calc(4rem+env(safe-area-inset-bottom))] md:mb-0 overflow-hidden">
+              <main className="flex-grow relative mb-[calc(4rem+env(safe-area-inset-bottom))] md:mb-0 overflow-hidden">
                 <Router />
               </main>
               <BottomNavBar />

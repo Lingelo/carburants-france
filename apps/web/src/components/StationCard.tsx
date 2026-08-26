@@ -4,6 +4,7 @@ import { isStale, timeAgo } from '../lib/data';
 import { formatPrice } from '../lib/format';
 import { useSettings } from '../state/SettingsContext';
 import { useI18n } from '../i18n';
+import { BrandAvatar } from './BrandAvatar';
 import { Icon } from './Icon';
 
 interface Props {
@@ -42,11 +43,11 @@ export function StationCard({
     <article
       onClick={onClick}
       className={[
-        'bg-surface-container-lowest rounded-xl p-md text-left w-full',
+        'bg-surface-container rounded-xl p-md text-left w-full',
         isCheapest
-          ? 'shadow-[0_4px_12px_rgba(22,29,27,0.05)] border border-tertiary-fixed-dim/30 relative overflow-hidden'
-          : 'shadow-[0_2px_8px_rgba(22,29,27,0.03)] border border-surface-variant',
-        onClick ? 'cursor-pointer hover:border-primary transition-colors' : '',
+          ? 'border border-primary/40 relative overflow-hidden'
+          : 'border border-outline-variant',
+        onClick ? 'cursor-pointer hover:border-outline-strong transition-colors' : '',
       ].join(' ')}
     >
       {isCheapest && (
@@ -57,9 +58,7 @@ export function StationCard({
       <div className="flex justify-between items-start gap-md">
         <div className="flex flex-col gap-xs flex-1 min-w-0">
           <div className="flex items-center gap-sm">
-            <div className="w-10 h-10 rounded bg-surface-container flex items-center justify-center shrink-0">
-              <Icon name="local_gas_station" className="text-on-surface-variant" />
-            </div>
+            <BrandAvatar brand={station.brand} size={44} />
             <div className="min-w-0">
               <div className="flex items-center gap-2 min-w-0">
                 <h3 className="text-headline-md font-semibold text-on-surface truncate">{display}</h3>
@@ -82,7 +81,7 @@ export function StationCard({
               {otherFuels.slice(0, 3).map((f) => (
                 <span
                   key={f}
-                  className="px-2 py-1 rounded bg-surface-container text-on-surface-variant text-label-caps font-bold tracking-wider"
+                  className="px-2 py-1 rounded-lg bg-surface-container-high text-on-surface-variant text-label-caps font-bold tracking-wider"
                 >
                   {FUEL_LABELS[f]}: {formatPrice(station.fuels[f]!.p)} €
                 </span>
@@ -98,8 +97,8 @@ export function StationCard({
           )}
           {main ? (
             <div
-              className="text-display-price font-bold tracking-tight mt-1"
-              style={{ color: priceColor ?? (isCheapest ? 'var(--color-tertiary)' : 'var(--color-on-surface)') }}
+              className="text-display-price font-bold tracking-tight mt-1 tabular-nums"
+              style={{ color: priceColor ?? (isCheapest ? 'var(--color-primary)' : 'var(--color-on-surface)') }}
             >
               {formatPrice(main.p)}
               <span className="text-headline-md font-semibold ml-0.5">€</span>
@@ -111,7 +110,7 @@ export function StationCard({
           )}
         </div>
       </div>
-      <div className="mt-md pt-sm border-t border-surface-variant flex justify-between items-center">
+      <div className="mt-md pt-sm border-t border-outline-variant flex justify-between items-center">
         <p className={`text-body-sm flex items-center gap-1 ${stale ? 'text-error' : 'text-on-surface-variant'}`}>
           {stale && <Icon name="warning" size={14} />}
           {main ? t('time.updated', { time: timeAgo(main.d) }) : '—'}
@@ -123,7 +122,7 @@ export function StationCard({
                 e.stopPropagation();
                 onToggleFavorite();
               }}
-              className="p-1 rounded-full hover:bg-surface-container active:scale-90 transition-transform"
+              className="p-1 rounded-full hover:bg-surface-container-high active:scale-90 transition-transform"
               aria-label={isFavorite ? t('station.removeFav') : t('station.addFav')}
             >
               <Icon
@@ -140,7 +139,7 @@ export function StationCard({
               e.stopPropagation();
               onViewMap();
             }}
-            className="text-primary text-label-caps font-bold tracking-wider flex items-center gap-1 hover:bg-surface-container px-2 py-1 rounded transition-colors"
+            className="text-primary text-label-caps font-bold tracking-wider flex items-center gap-1 hover:bg-surface-container-high px-2 py-1 rounded transition-colors"
           >
               {t('station.viewOnMap')} <Icon name="map" size={16} />
             </button>

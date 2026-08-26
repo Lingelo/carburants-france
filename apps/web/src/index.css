@@ -6,59 +6,69 @@
 @import '@fontsource/inter/700.css';
 
 @theme {
-  /* === Material 3 colors — "Radar teal" identity (FuelRadar) === */
-  --color-surface: #f4fbf8;
-  --color-surface-dim: #d5dbd9;
-  --color-surface-bright: #f4fbf8;
-  --color-surface-container-lowest: #ffffff;
-  --color-surface-container-low: #eff5f2;
-  --color-surface-container: #e9efec;
-  --color-surface-container-high: #e3eae7;
-  --color-surface-container-highest: #dde4e1;
-  --color-on-surface: #161d1b;
-  --color-on-surface-variant: #3f4947;
-  --color-inverse-surface: #2b3230;
-  --color-inverse-on-surface: #ecf2ef;
-  --color-outline: #6f7977;
-  --color-outline-variant: #bec9c6;
-  --color-surface-tint: #006a60;
-  --color-surface-variant: #dbe5e1;
+  /* === Dark map-first palette (spec 2026-08-26) ===
+     Single dark scheme. Legacy Material-3 token names are kept so existing
+     utilities keep working; they are remapped onto the 4-surface dark scale:
+     bg #121212 · surface-1 #191919 · surface-2 #222222 · surface-3 #2A2A2A. */
+  --color-surface: #121212;
+  --color-surface-dim: #121212;
+  --color-surface-bright: #2a2a2a;
+  --color-surface-container-lowest: #191919;
+  --color-surface-container-low: #191919;
+  --color-surface-container: #222222;
+  --color-surface-container-high: #2a2a2a;
+  --color-surface-container-highest: #2a2a2a;
+  --color-on-surface: #f5f6f4;
+  --color-on-surface-variant: #a3a9a6;
+  --color-inverse-surface: #f5f6f4;
+  --color-inverse-on-surface: #121212;
+  --color-outline: #6e7573;
+  --color-outline-variant: rgba(255, 255, 255, 0.08);
+  --color-outline-strong: rgba(255, 255, 255, 0.16);
+  --color-surface-tint: #4ade80;
+  --color-surface-variant: #2a2a2a;
 
-  --color-primary: #006a60;
-  --color-on-primary: #ffffff;
-  --color-primary-container: #00857a;
-  --color-on-primary-container: #f4fffb;
-  --color-inverse-primary: #54dbc8;
-  --color-primary-fixed: #a2f2e4;
-  --color-primary-fixed-dim: #54dbc8;
-  --color-on-primary-fixed: #00201c;
-  --color-on-primary-fixed-variant: #005048;
+  /* Accent — neon green. */
+  --color-primary: #4ade80;
+  --color-on-primary: #0b2916;
+  --color-primary-container: #14532d;
+  --color-on-primary-container: #bbf7d0;
+  --color-inverse-primary: #166534;
+  --color-primary-fixed: rgba(74, 222, 128, 0.16);
+  --color-primary-fixed-dim: #4ade80;
+  --color-on-primary-fixed: #4ade80;
+  --color-on-primary-fixed-variant: #4ade80;
 
-  --color-secondary: #006399;
-  --color-on-secondary: #ffffff;
-  --color-secondary-container: #7bc2ff;
-  --color-on-secondary-container: #004f7b;
-  --color-secondary-fixed: #cde5ff;
-  --color-secondary-fixed-dim: #94ccff;
-  --color-on-secondary-fixed: #001d32;
-  --color-on-secondary-fixed-variant: #004b74;
+  /* Secondary collapses onto the accent; its "container" is the white-10%
+     pill used for neutral CTAs (spec §3). */
+  --color-secondary: #4ade80;
+  --color-on-secondary: #0b2916;
+  --color-secondary-container: rgba(255, 255, 255, 0.1);
+  --color-on-secondary-container: #f5f6f4;
+  --color-secondary-fixed: rgba(74, 222, 128, 0.12);
+  --color-secondary-fixed-dim: #4ade80;
+  --color-on-secondary-fixed: #f5f6f4;
+  --color-on-secondary-fixed-variant: #a3a9a6;
 
-  --color-tertiary: #006b2f;
-  --color-on-tertiary: #ffffff;
-  --color-tertiary-container: #1e8642;
-  --color-on-tertiary-container: #f7fff3;
-  --color-tertiary-fixed: #95f8a7;
-  --color-tertiary-fixed-dim: #79db8d;
-  --color-on-tertiary-fixed: #00210a;
-  --color-on-tertiary-fixed-variant: #005323;
+  /* Tertiary = positive/success accents (Min badges, 24/7 chips…). */
+  --color-tertiary: #4ade80;
+  --color-on-tertiary: #0b2916;
+  --color-tertiary-container: rgba(74, 222, 128, 0.14);
+  --color-on-tertiary-container: #4ade80;
+  --color-tertiary-fixed: rgba(74, 222, 128, 0.2);
+  --color-tertiary-fixed-dim: #4ade80;
+  --color-on-tertiary-fixed: #4ade80;
+  --color-on-tertiary-fixed-variant: #4ade80;
 
-  --color-error: #ba1a1a;
-  --color-on-error: #ffffff;
-  --color-error-container: #ffdad6;
-  --color-on-error-container: #93000a;
+  --color-error: #f87171;
+  --color-on-error: #2d0b0b;
+  --color-error-container: rgba(248, 113, 113, 0.14);
+  --color-on-error-container: #fca5a5;
 
-  --color-background: #f4fbf8;
-  --color-on-background: #161d1b;
+  --color-warning: #fbbf24;
+
+  --color-background: #121212;
+  --color-on-background: #f5f6f4;
 
   /* === Typography (Inter, custom scale) === */
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
@@ -99,13 +109,21 @@
   --spacing-lg: 24px;
   --spacing-xl: 32px;
 
-  /* === Border radius === */
+  /* === Border radius (spec: xs 8 · sm 10 · md 12 · lg 16 · xl 20 · pill) === */
   --radius-sm: 0.25rem;
   --radius: 0.5rem;
   --radius-md: 0.75rem;
   --radius-lg: 1rem;
-  --radius-xl: 1.5rem;
+  --radius-xl: 1.25rem;
   --radius-full: 9999px;
+
+  /* === Shadows — soft black + accent glow === */
+  --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --shadow-glow: 0 0 12px color-mix(in srgb, var(--color-primary) 45%, transparent);
+}
+
+:root {
+  color-scheme: dark;
 }
 
 html,
@@ -121,6 +139,17 @@ body {
   color: var(--color-on-background);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+/* Accessible focus ring — accent, visible on every dark surface. */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Tabular figures for prices where supported. */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }
 
 .material-symbols-outlined {
@@ -176,10 +205,22 @@ html:not(.fonts-loaded) .material-symbols-outlined {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
-/* Map pin animations */
+/* Dim Leaflet attribution on dark tiles. */
+.leaflet-container {
+  background: var(--color-background);
+}
+.leaflet-control-attribution {
+  background: rgba(18, 18, 18, 0.7) !important;
+  color: var(--color-on-surface-variant) !important;
+}
+.leaflet-control-attribution a {
+  color: var(--color-on-surface-variant) !important;
+}
+
+/* Map pin animations — circular brand pin + price badge. */
 .fuel-pin {
   cursor: pointer;
-  transform-origin: center bottom;
+  transform-origin: center center;
   transition: transform 120ms ease;
 }
 .fuel-pin:hover {
@@ -190,15 +231,16 @@ html:not(.fonts-loaded) .material-symbols-outlined {
   animation: fuel-pin-pop 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .fuel-pin-selected .fuel-pin-body {
-  transform: scale(1.18);
-  box-shadow:
-    0 0 0 4px color-mix(in srgb, var(--color-primary) 25%, transparent),
-    0 4px 12px rgba(0, 0, 0, 0.5);
+  transform: scale(1.1);
 }
 .fuel-pin-selected .fuel-pin-pulse {
   position: absolute;
-  inset: -8px;
-  border-radius: 16px;
+  top: -6px;
+  left: 50%;
+  width: 50px;
+  height: 50px;
+  margin-left: -25px;
+  border-radius: 50%;
   background: color-mix(in srgb, var(--color-primary) 35%, transparent);
   animation: fuel-pin-pulse 1.6s ease-out infinite;
   pointer-events: none;

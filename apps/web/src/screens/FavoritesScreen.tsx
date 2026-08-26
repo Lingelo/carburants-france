@@ -8,6 +8,7 @@ import { haversineKm } from '../lib/distance';
 import { useNearbyStations } from '../hooks/useNearbyStations';
 import { useI18n } from '../i18n';
 import { StationCard } from '../components/StationCard';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { Icon } from '../components/Icon';
 import type { Station } from '../types';
 
@@ -71,16 +72,17 @@ export function FavoritesScreen() {
 
   return (
     <div className="h-full overflow-y-auto">
-      <main className="max-w-3xl mx-auto px-md py-lg space-y-lg">
-        <header className="flex items-center justify-between">
-          <h1 className="text-headline-lg font-semibold text-on-surface">{t('fav.title')}</h1>
+      <ScreenHeader
+        title={t('fav.title')}
+        actions={
           <span className="text-body-sm text-on-surface-variant">
             {t('common.stationsCount', { n: fav.favorites.size })}
           </span>
-        </header>
-
+        }
+      />
+      <main className="max-w-3xl mx-auto px-md py-lg space-y-lg">
         {fav.favorites.size === 0 && (
-          <div className="bg-surface-container-lowest border border-surface-variant rounded-xl p-lg text-center">
+          <div className="bg-surface-container border border-outline-variant rounded-xl p-lg text-center">
             <Icon name="star" size={48} className="text-on-surface-variant mb-sm" />
             <p className="text-body-lg text-on-surface mb-1">{t('fav.empty')}</p>
             <p className="text-body-sm text-on-surface-variant">
@@ -90,7 +92,7 @@ export function FavoritesScreen() {
         )}
 
         {fav.favorites.size > 0 && enriched.length === 0 && (
-          <div className="bg-surface-container-lowest border border-surface-variant rounded-xl p-lg text-center">
+          <div className="bg-surface-container border border-outline-variant rounded-xl p-lg text-center">
             <p className="text-body-sm text-on-surface-variant">
               {t('fav.loadingOutside')}
             </p>

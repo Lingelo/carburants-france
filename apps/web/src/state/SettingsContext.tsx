@@ -5,20 +5,15 @@ const KEY = 'fuel-radar-settings-v1';
 // have their settings under it. Read it as a fallback and clean it up.
 const LEGACY_KEY = 'carburants-france-settings-v1';
 
-export type DefaultStartScreen = 'map' | 'stations';
-
 interface Settings {
-  defaultStart: DefaultStartScreen;
   showStaleWarning: boolean;
 }
 
 interface State extends Settings {
-  setDefaultStart: (s: DefaultStartScreen) => void;
   setShowStaleWarning: (b: boolean) => void;
 }
 
 const DEFAULTS: Settings = {
-  defaultStart: 'map',
   showStaleWarning: true,
 };
 
@@ -28,7 +23,13 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<Settings>(() => {
     try {
       const raw = localStorage.getItem(KEY) ?? localStorage.getItem(LEGACY_KEY);
-      return raw ? { ...DEFAULTS, ...(JSON.parse(raw) as Settings) } : DEFAULTS;
+      if (!raw) return DEFAULTS;
+      const parsed = JSON.parse(raw) as Partial<Settings> & { defaultStart?: string };
+      // Migration (dark map-first redesign): the "start screen" preference is
+      // gone — the Stations list merged into the map. Drop the stored value;
+      // the persistence effect below rewrites the entry without it.
+      delete parsed.defaultStart;
+      return { ...DEFAULTS, ...parsed };
     } catch {
       return DEFAULTS;
     }
@@ -46,7 +47,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const value = useMemo<State>(
     () => ({
       ...settings,
-      setDefaultStart: (defaultStart) => setSettings((s) => ({ ...s, defaultStart })),
       setShowStaleWarning: (showStaleWarning) => setSettings((s) => ({ ...s, showStaleWarning })),
     }),
     [settings],

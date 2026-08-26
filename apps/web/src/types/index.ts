@@ -56,7 +56,6 @@ export type StationHistoryData = Record<string, Record<string, [number, number][
 
 export type View =
   | { kind: 'map' }
-  | { kind: 'stations' }
   | { kind: 'favorites' }
   | { kind: 'trends' }
   | { kind: 'settings' }

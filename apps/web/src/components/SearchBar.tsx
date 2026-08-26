@@ -38,7 +38,7 @@ export function SearchBar({ initialLabel, onResult, onOpenFilters }: Props) {
 
   return (
     <div className="relative">
-      <div className="bg-surface-container-lowest rounded-xl shadow-[0_4px_12px_rgba(22,29,27,0.1)] p-1 flex items-center border border-outline-variant focus-within:border-primary transition-colors">
+      <div className="bg-surface-container rounded-full shadow-[0_8px_24px_rgba(0,0,0,0.45)] p-1 flex items-center border border-outline-variant focus-within:border-primary transition-colors">
         <Icon name="search" className="text-on-surface-variant pl-3" />
         <input
           ref={inputRef}
@@ -54,7 +54,7 @@ export function SearchBar({ initialLabel, onResult, onOpenFilters }: Props) {
           }}
           onBlur={() => setTimeout(() => setOpen(false), 150)}
           placeholder={t('search.placeholder')}
-          className="w-full bg-transparent border-none focus:outline-none text-body-lg text-on-surface py-2 px-3 placeholder:text-on-surface-variant"
+          className="w-full bg-transparent border-none focus:outline-none text-body-lg text-on-surface py-2 px-3 placeholder:text-outline"
         />
         {query && (
           <button
@@ -64,7 +64,7 @@ export function SearchBar({ initialLabel, onResult, onOpenFilters }: Props) {
               setResults([]);
               inputRef.current?.focus();
             }}
-            className="p-1 mr-1 rounded-full text-on-surface-variant hover:bg-surface-container active:scale-95 transition-transform"
+            className="p-1 mr-1 rounded-full text-on-surface-variant hover:bg-surface-container-high active:scale-95 transition-transform"
             aria-label={t('search.clear')}
           >
             <Icon name="close" size={18} />
@@ -73,7 +73,8 @@ export function SearchBar({ initialLabel, onResult, onOpenFilters }: Props) {
         {onOpenFilters && (
           <button
             onClick={onOpenFilters}
-            className="bg-secondary-container text-on-secondary-container px-3 py-1.5 rounded-lg text-label-caps font-bold tracking-wider active:scale-95 transition-transform flex items-center gap-1 mr-1"
+            className="bg-secondary-container text-on-secondary-container px-3 py-1.5 rounded-full text-label-caps font-bold tracking-wider active:scale-95 transition-transform flex items-center gap-1 mr-1"
+            aria-label={t('common.filters')}
           >
             <Icon name="tune" size={16} /> {t('common.filters')}
           </button>
@@ -81,11 +82,11 @@ export function SearchBar({ initialLabel, onResult, onOpenFilters }: Props) {
       </div>
 
       {open && results.length > 0 && (
-        <ul className="absolute left-0 right-0 top-full mt-1 bg-surface-container-lowest rounded-xl shadow-[0_8px_24px_rgba(22,29,27,0.15)] border border-outline-variant overflow-hidden z-50 max-h-80 overflow-y-auto overscroll-contain">
+        <ul className="absolute left-0 right-0 top-full mt-1 bg-surface-container rounded-xl shadow-[0_8px_24px_rgba(0,0,0,0.45)] border border-outline-variant overflow-hidden z-50 max-h-80 overflow-y-auto overscroll-contain">
           {results.map((r) => (
             <li
               key={r.label + r.lat + r.lng}
-              className="px-4 py-3 hover:bg-surface-container cursor-pointer text-body-sm text-on-surface border-b border-surface-variant last:border-0"
+              className="px-4 py-3 hover:bg-surface-container-high cursor-pointer text-body-sm text-on-surface border-b border-outline-variant last:border-0"
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => {
                 onResult(r);
