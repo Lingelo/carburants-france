@@ -11,15 +11,17 @@ import { FUEL_LABELS, FUEL_TYPES, type FuelType } from '../types';
 import { useI18n } from '../i18n';
 import { Icon } from '../components/Icon';
 import { PriceChart } from '../components/PriceChart';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { formatPrice, formatPercent } from '../lib/format';
 
+/** Series colors lifted for readability on the dark background. */
 const FUEL_COLORS: Record<FuelType, string> = {
-  Gazole: '#ea580c',
-  E10: '#0d9488',
-  SP95: '#16a34a',
-  SP98: '#2563eb',
-  E85: '#7c3aed',
-  GPLc: '#525252',
+  Gazole: '#FB923C',
+  E10: '#2DD4BF',
+  SP95: '#4ADE80',
+  SP98: '#60A5FA',
+  E85: '#A78BFA',
+  GPLc: '#A3A3A3',
 };
 
 export function TrendsScreen() {
@@ -180,17 +182,13 @@ export function TrendsScreen() {
   return (
     <>
       <div className="h-full overflow-y-auto">
+        <ScreenHeader title={t('trends.title')} />
         <main className="max-w-5xl mx-auto px-md py-lg space-y-lg">
           <header className="flex items-center justify-between flex-wrap gap-2">
-            <div>
-              <h1 className="text-headline-lg font-semibold text-on-surface">
-                {t('trends.title')}
-              </h1>
-              <p className="text-body-sm text-on-surface-variant">
-                {t('trends.subtitle', { scope: scopeLabel })}{' '}
-                {updatedAt && `${t('time.updated', { time: timeAgo(updatedAt) })}.`}
-              </p>
-            </div>
+            <p className="text-body-sm text-on-surface-variant flex-1 min-w-[200px]">
+              {t('trends.subtitle', { scope: scopeLabel })}{' '}
+              {updatedAt && `${t('time.updated', { time: timeAgo(updatedAt) })}.`}
+            </p>
             {RangeSwitch}
           </header>
 

@@ -100,7 +100,7 @@ export function FilterSheet({ open, onClose }: Props) {
       <main className="flex-grow overflow-y-auto p-md md:max-w-2xl md:mx-auto w-full pb-32">
         <div className="flex flex-col gap-lg">
           {/* Fuel Type */}
-          <section className="bg-surface-container-lowest rounded-xl p-md shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)] border border-surface-container-highest">
+          <section className="bg-surface-container-lowest rounded-xl p-md border border-outline-variant">
             <h2 className="text-headline-md font-semibold text-on-surface mb-sm">
               {t('filters.fuelType')}
             </h2>
@@ -123,7 +123,7 @@ export function FilterSheet({ open, onClose }: Props) {
           </section>
 
           {/* Sort By */}
-          <section className="bg-surface-container-lowest rounded-xl p-md shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)] border border-surface-container-highest">
+          <section className="bg-surface-container-lowest rounded-xl p-md border border-outline-variant">
             <h2 className="text-headline-md font-semibold text-on-surface mb-sm">{t('filters.sortBy')}</h2>
             <div className="grid grid-cols-2 gap-2">
               {(
@@ -155,7 +155,7 @@ export function FilterSheet({ open, onClose }: Props) {
           </section>
 
           {/* Availability */}
-          <section className="bg-surface-container-lowest rounded-xl p-md shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)] border border-surface-container-highest">
+          <section className="bg-surface-container-lowest rounded-xl p-md border border-outline-variant">
             <h2 className="text-headline-md font-semibold text-on-surface mb-sm">
               {t('filters.availability')}
             </h2>
@@ -179,7 +179,7 @@ export function FilterSheet({ open, onClose }: Props) {
           </section>
 
           {/* Search Radius */}
-          <section className="bg-surface-container-lowest rounded-xl p-md shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)] border border-surface-container-highest">
+          <section className="bg-surface-container-lowest rounded-xl p-md border border-outline-variant">
             <div className="flex justify-between items-center mb-sm">
               <h2 className="text-headline-md font-semibold text-on-surface">
                 {t('filters.radius')}
@@ -208,7 +208,7 @@ export function FilterSheet({ open, onClose }: Props) {
           </section>
 
           {/* Brands */}
-          <section className="bg-surface-container-lowest rounded-xl p-md shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)] border border-surface-container-highest">
+          <section className="bg-surface-container-lowest rounded-xl p-md border border-outline-variant">
             <div className="flex justify-between items-center mb-sm">
               <h2 className="text-headline-md font-semibold text-on-surface">{t('filters.brands')}</h2>
               <button

@@ -53,8 +53,9 @@ fun AddressSearchBar(
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             shape = MaterialTheme.shapes.extraLarge,
             colors = TextFieldDefaults.colors(
-                focusedContainerColor = MaterialTheme.colorScheme.surface,
-                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                // Dark input pill (spec §2 surface-2), flat — no indicator line.
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent,
                 disabledIndicatorColor = Color.Transparent,
@@ -66,7 +67,7 @@ fun AddressSearchBar(
             Surface(
                 modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
                 shape = MaterialTheme.shapes.medium,
-                tonalElevation = 3.dp,
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 shadowElevation = 4.dp,
             ) {
                 Column {

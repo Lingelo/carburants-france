@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Map
@@ -37,12 +36,12 @@ import fr.fuelradar.ui.detail.StationDetailScreen
 import fr.fuelradar.ui.favorites.FavoritesScreen
 import fr.fuelradar.ui.map.MapScreen
 import fr.fuelradar.ui.settings.SettingsScreen
-import fr.fuelradar.ui.stations.StationsScreen
 import fr.fuelradar.ui.trends.TrendsScreen
 
+// Map-first (spec §4): the old Stations tab is fused into the map's station
+// sheet, leaving 4 tabs. SettingsStore migrates startupTab "stations" → "map".
 private enum class Tab(val route: String, val labelRes: Int, val icon: ImageVector) {
     Map("map", R.string.tab_map, Icons.Filled.Map),
-    Stations("stations", R.string.tab_stations, Icons.AutoMirrored.Filled.List),
     Favorites("favorites", R.string.tab_favorites, Icons.Filled.Favorite),
     Trends("trends", R.string.tab_trends, Icons.AutoMirrored.Filled.ShowChart),
     Settings("settings", R.string.tab_settings, Icons.Filled.Settings),
@@ -99,25 +98,6 @@ fun AppNav() {
             composable(Tab.Map.route) {
                 MapScreen(
                     onOpenStation = { id -> navController.navigate("details/$id") },
-                )
-            }
-            composable(Tab.Stations.route) {
-                StationsScreen(
-                    onOpenStation = { id -> navController.navigate("details/$id") },
-                    onOpenRoute = {
-                        // Route is a mode of the map: activate it and switch there.
-                        ServiceLocator.routeSession.activate()
-                        navController.navigate(Tab.Map.route) {
-                            popUpTo(navController.graph.findStartDestination().id)
-                            launchSingleTop = true
-                        }
-                    },
-                    onOpenMap = {
-                        navController.navigate(Tab.Map.route) {
-                            popUpTo(navController.graph.findStartDestination().id)
-                            launchSingleTop = true
-                        }
-                    },
                 )
             }
             composable(Tab.Favorites.route) {

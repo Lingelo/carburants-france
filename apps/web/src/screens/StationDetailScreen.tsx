@@ -9,6 +9,7 @@ import { deptsAround } from '../lib/deptIndex';
 import { haversineKm, formatDistance } from '../lib/distance';
 import { useI18n } from '../i18n';
 import { Icon } from '../components/Icon';
+import { BrandAvatar } from '../components/BrandAvatar';
 import { PriceTrendBars } from '../components/PriceTrendBars';
 import { formatPrice, formatPriceDelta } from '../lib/format';
 import { getPriceBounds, getPriceColor } from '../lib/priceColor';
@@ -23,10 +24,10 @@ interface Props {
 const detailPin = L.divIcon({
   html: `
     <div style="display:flex;flex-direction:column;align-items:center;">
-      <div style="background:#006a60;color:#fff;padding:4px 8px;border-radius:8px;border:2px solid white;font-weight:700;font-size:13px;line-height:1;box-shadow:0 2px 8px rgba(0,0,0,0.4);">
+      <div style="background:var(--color-primary);color:var(--color-on-primary);padding:4px 8px;border-radius:8px;border:2px solid white;font-weight:700;font-size:13px;line-height:1;box-shadow:0 0 12px color-mix(in srgb, var(--color-primary) 45%, transparent),0 2px 8px rgba(0,0,0,0.5);">
         <span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle;">local_gas_station</span>
       </div>
-      <div style="width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:8px solid #006a60;margin-top:-1px;"></div>
+      <div style="width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:8px solid var(--color-primary);margin-top:-1px;"></div>
     </div>
   `,
   className: '',
@@ -186,14 +187,14 @@ export function StationDetailScreen({ stationId }: Props) {
           attributionControl={false}
           className="absolute inset-0 z-0"
         >
-          <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" />
+          <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
           <MapInvalidator />
           <Marker position={[station.lat, station.lng]} icon={detailPin} />
         </MapContainer>
-        <div className="absolute inset-0 bg-gradient-to-b from-on-surface/40 via-transparent to-on-surface/30 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-transparent to-background/60 pointer-events-none" />
         <button
           onClick={() => nav.goBack()}
-          className="absolute top-4 left-4 bg-surface-container-lowest text-on-surface p-2 rounded-full shadow-md active:scale-95 transition-transform z-[400]"
+          className="absolute top-4 left-4 bg-surface-container text-on-surface border border-outline-variant p-2 rounded-full shadow-[0_8px_24px_rgba(0,0,0,0.45)] active:scale-95 transition-transform z-[400]"
           aria-label={t('common.back')}
         >
           <Icon name="arrow_back" />
@@ -201,7 +202,7 @@ export function StationDetailScreen({ stationId }: Props) {
         <div className="absolute top-4 right-4 z-[400] flex gap-2">
           <button
             onClick={share}
-            className="bg-surface-container-lowest border border-outline-variant p-2 rounded-full shadow-md active:scale-95 transition-transform"
+            className="bg-surface-container border border-outline-variant p-2 rounded-full shadow-[0_8px_24px_rgba(0,0,0,0.45)] active:scale-95 transition-transform"
             aria-label={t('station.shareStation')}
             title={t('common.share')}
           >
@@ -209,7 +210,7 @@ export function StationDetailScreen({ stationId }: Props) {
           </button>
           <button
             onClick={() => fav.toggle(station.id)}
-            className="bg-surface-container-lowest border border-outline-variant p-2 rounded-full shadow-md active:scale-95 transition-transform"
+            className="bg-surface-container border border-outline-variant p-2 rounded-full shadow-[0_8px_24px_rgba(0,0,0,0.45)] active:scale-95 transition-transform"
             aria-label={fav.isFavorite(station.id) ? t('station.removeFav') : t('station.addFav')}
           >
             <Icon
@@ -223,20 +224,23 @@ export function StationDetailScreen({ stationId }: Props) {
 
       <main className="w-full max-w-3xl mx-auto px-md pb-lg pt-md space-y-lg relative z-10">
         {/* Identity card */}
-        <section className="bg-surface-container-lowest p-lg rounded-xl shadow-[0_4px_12px_rgba(22,29,27,0.1)]">
+        <section className="bg-surface-container-lowest border border-outline-variant p-lg rounded-xl shadow-[0_8px_24px_rgba(0,0,0,0.45)]">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-md">
-            <div className="min-w-0">
-              <h1 className="text-headline-lg font-semibold text-on-surface truncate">
-                {station.brand ?? t('station.fallbackNameId', { id: station.id })}
-              </h1>
-              <p className="text-body-sm text-on-surface-variant mt-1 flex items-start gap-1">
-                <Icon name="location_on" size={16} />
-                <span>
-                  {station.addr ? `${station.addr}, ` : ''}
-                  {station.cp} {station.city}
-                  {distance !== null && ` • ${formatDistance(distance)}`}
-                </span>
-              </p>
+            <div className="min-w-0 flex items-center gap-3">
+              <BrandAvatar brand={station.brand} size={52} />
+              <div className="min-w-0">
+                <h1 className="text-headline-lg font-semibold text-on-surface truncate">
+                  {station.brand ?? t('station.fallbackNameId', { id: station.id })}
+                </h1>
+                <p className="text-body-sm text-on-surface-variant mt-1 flex items-start gap-1">
+                  <Icon name="location_on" size={16} />
+                  <span>
+                    {station.addr ? `${station.addr}, ` : ''}
+                    {station.cp} {station.city}
+                    {distance !== null && ` • ${formatDistance(distance)}`}
+                  </span>
+                </p>
+              </div>
             </div>
             <a
               href={directionsHref}
@@ -251,7 +255,7 @@ export function StationDetailScreen({ stationId }: Props) {
 
         <div className="grid md:grid-cols-2 gap-gutter items-start">
           {/* Prices */}
-          <section className="bg-surface-container-lowest p-lg rounded-xl shadow-[0_4px_6px_-1px_rgba(22,29,27,0.1)]">
+          <section className="bg-surface-container-lowest p-lg rounded-xl shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1)]">
             <h2 className="text-headline-md font-semibold text-on-surface mb-md flex items-center gap-2 border-b border-surface-variant pb-2">
               <Icon name="local_gas_station" className="text-primary" />
               {t('station.currentPrices')}
@@ -322,7 +326,7 @@ export function StationDetailScreen({ stationId }: Props) {
           </section>
 
           {/* Trend chart */}
-          <section className="bg-surface-container-lowest p-lg rounded-xl shadow-[0_4px_6px_-1px_rgba(22,29,27,0.1)]">
+          <section className="bg-surface-container-lowest p-lg rounded-xl shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1)]">
             <h2 className="text-headline-md font-semibold text-on-surface mb-md flex items-center gap-2 border-b border-surface-variant pb-2">
               <Icon name="insights" className="text-secondary" />
               {t('station.trend7d', { fuel: FUEL_LABELS[f.selectedFuel] })}
@@ -332,7 +336,7 @@ export function StationDetailScreen({ stationId }: Props) {
         </div>
 
         {(station.h24 || station.hw || (station.services && station.services.length > 0)) && (
-          <section className="bg-surface-container-lowest p-lg rounded-xl shadow-[0_4px_6px_-1px_rgba(22,29,27,0.1)]">
+          <section className="bg-surface-container-lowest p-lg rounded-xl shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1)]">
             <h2 className="text-headline-md font-semibold text-on-surface mb-md flex items-center gap-2 border-b border-surface-variant pb-2">
               <Icon name="handyman" className="text-secondary" />
               {t('station.services')}
@@ -368,7 +372,7 @@ export function StationDetailScreen({ stationId }: Props) {
         <div
           role="status"
           aria-live="polite"
-          className="fixed bottom-24 md:bottom-6 left-1/2 -translate-x-1/2 z-[1200] bg-inverse-surface text-inverse-on-surface px-4 py-2.5 rounded-full shadow-[0_8px_24px_rgba(22,29,27,0.25)] flex items-center gap-2 text-body-sm font-medium animate-[slideUp_220ms_ease-out]"
+          className="fixed bottom-24 md:bottom-6 left-1/2 -translate-x-1/2 z-[1200] bg-inverse-surface text-inverse-on-surface px-4 py-2.5 rounded-full shadow-[0_8px_24px_rgba(0,0,0,0.25)] flex items-center gap-2 text-body-sm font-medium animate-[slideUp_220ms_ease-out]"
         >
           <Icon name="check_circle" filled size={18} />
           {toast}

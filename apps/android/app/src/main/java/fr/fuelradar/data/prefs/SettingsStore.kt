@@ -24,7 +24,9 @@ class SettingsStore(context: Context) {
 
     val settings: Flow<AppSettings> = store.data.map { p ->
         AppSettings(
-            startupTab = p[STARTUP] ?: "map",
+            // Map-first redesign removed the Stations tab: migrate the persisted
+            // value on read so old installs land on the map instead of a dead route.
+            startupTab = (p[STARTUP] ?: "map").let { if (it == "stations") "map" else it },
             staleWarning = p[STALE] ?: true,
         )
     }

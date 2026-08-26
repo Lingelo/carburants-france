@@ -7,7 +7,6 @@ interface ViewState {
   focusStationId: number | null;
   consumeFocusStation: () => number | null;
   goMap: (focusStationId?: number) => void;
-  goStations: () => void;
   goFavorites: () => void;
   goTrends: () => void;
   goSettings: () => void;
@@ -22,8 +21,6 @@ function viewToHash(view: View): string {
   switch (view.kind) {
     case 'map':
       return '';
-    case 'stations':
-      return '#/stations';
     case 'favorites':
       return '#/favoris';
     case 'trends':
@@ -39,7 +36,9 @@ function viewToHash(view: View): string {
 function hashToView(hash: string): View | null {
   const h = hash.replace(/^#\/?/, '');
   if (!h || h === '' || h === '/') return { kind: 'map' };
-  if (h === 'stations') return { kind: 'stations' };
+  // Legacy route: the standalone Stations list merged into the map view
+  // (dark map-first redesign) — old bookmarks land on the map.
+  if (h === 'stations') return { kind: 'map' };
   if (h === 'favoris') return { kind: 'favorites' };
   if (h === 'tendances') return { kind: 'trends' };
   if (h === 'reglages') return { kind: 'settings' };
@@ -102,7 +101,6 @@ export function ViewProvider({ children }: { children: ReactNode }) {
     return id;
   }, [focusStationId]);
 
-  const goStations = useCallback(() => replaceRoot({ kind: 'stations' }), [replaceRoot]);
   const goFavorites = useCallback(() => replaceRoot({ kind: 'favorites' }), [replaceRoot]);
   const goTrends = useCallback(() => replaceRoot({ kind: 'trends' }), [replaceRoot]);
   const goSettings = useCallback(() => replaceRoot({ kind: 'settings' }), [replaceRoot]);
@@ -117,14 +115,13 @@ export function ViewProvider({ children }: { children: ReactNode }) {
       focusStationId,
       consumeFocusStation,
       goMap,
-      goStations,
       goFavorites,
       goTrends,
       goSettings,
       goDetails,
       goBack,
     }),
-    [view, focusStationId, consumeFocusStation, goMap, goStations, goFavorites, goTrends, goSettings, goDetails, goBack],
+    [view, focusStationId, consumeFocusStation, goMap, goFavorites, goTrends, goSettings, goDetails, goBack],
   );
 
   return <ViewContext.Provider value={value}>{children}</ViewContext.Provider>;

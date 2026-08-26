@@ -7,21 +7,26 @@ export function getPriceBounds(prices: number[]): { pMin: number; pMax: number }
   return { pMin, pMax };
 }
 
+/**
+ * Green→yellow→orange→red gradient stops. These colors are used as TEXT on
+ * dark surfaces (#121212–#2A2A2A), so lightness stays in the 55–65 % band
+ * for AA-ish contrast (spec §2).
+ */
 const STOPS: [number, number, number, number][] = [
-  [0.0, 142, 71, 40],
-  [0.12, 120, 65, 42],
-  [0.25, 90, 70, 44],
-  [0.38, 65, 80, 46],
-  [0.5, 48, 90, 48],
-  [0.62, 35, 90, 48],
-  [0.75, 20, 85, 48],
-  [0.88, 5, 75, 45],
-  [1.0, 0, 80, 30],
+  [0.0, 142, 69, 58],
+  [0.12, 120, 62, 58],
+  [0.25, 90, 65, 56],
+  [0.38, 65, 80, 56],
+  [0.5, 48, 92, 58],
+  [0.62, 35, 92, 60],
+  [0.75, 20, 90, 62],
+  [0.88, 5, 88, 64],
+  [1.0, 0, 90, 66],
 ];
 
 /** Map a price to a color (green→yellow→orange→red) based on bounds. */
 export function getPriceColor(price: number, pMin: number, pMax: number): string {
-  if (pMax === pMin) return 'hsl(142, 71%, 45%)';
+  if (pMax === pMin) return 'hsl(142, 69%, 58%)';
   const t = Math.max(0, Math.min(1, (price - pMin) / (pMax - pMin)));
   let i = 0;
   while (i < STOPS.length - 2 && STOPS[i + 1][0] < t) i++;

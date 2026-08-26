@@ -63,6 +63,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.MapsComposeExperimentalApi
 import com.google.maps.android.compose.MarkerComposable
@@ -84,6 +85,7 @@ import fr.fuelradar.domain.priceColor
 import fr.fuelradar.ui.common.BrandLogo
 import fr.fuelradar.ui.common.MotorwayBadge
 import fr.fuelradar.ui.common.relativeTime
+import fr.fuelradar.ui.map.rememberDarkMapStyle
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -162,6 +164,8 @@ fun StationDetailScreen(stationId: Long, onBack: () -> Unit) {
                 GoogleMap(
                     modifier = Modifier.fillMaxSize(),
                     cameraPositionState = cam,
+                    // Same dark styling as the main map (null on failure = default).
+                    properties = MapProperties(mapStyleOptions = rememberDarkMapStyle()),
                     uiSettings = MapUiSettings(
                         zoomControlsEnabled = false, scrollGesturesEnabled = false,
                         zoomGesturesEnabled = false, tiltGesturesEnabled = false,
@@ -365,13 +369,13 @@ fun StationDetailScreen(stationId: Long, onBack: () -> Unit) {
 
 @Composable
 private fun DetailCard(content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
-    // Same chrome as the stations-list StationCard: white surface, 1dp border,
-    // low elevation — so cards read consistently across list and detail.
+    // Same chrome as the list StationCard: surface-2 card, subtle border —
+    // so cards read consistently across list and detail (spec §2).
     Card(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceVariant),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
         Column(modifier = Modifier.padding(16.dp), content = content)
     }
@@ -399,7 +403,7 @@ private fun RoundIconButton(
         onClick = onClick,
         modifier = modifier.size(40.dp),
         shape = RoundedCornerShape(50),
-        color = MaterialTheme.colorScheme.surface,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
         shadowElevation = 3.dp,
     ) {
         Box(contentAlignment = Alignment.Center) {

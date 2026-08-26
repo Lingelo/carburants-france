@@ -59,9 +59,17 @@ class MapViewModel : ViewModel() {
     private val geocoder = ServiceLocator.geocoder
     private val filtersStore = ServiceLocator.filters
     private val routeSession = ServiceLocator.routeSession
+    private val favStore = ServiceLocator.favorites
 
     private val _state = MutableStateFlow(MapUiState())
     val state: StateFlow<MapUiState> = _state.asStateFlow()
+
+    /** Favorite station ids — the station sheet shows/toggles them per row. */
+    val favorites = favStore.ids
+
+    fun toggleFavorite(id: Long) {
+        viewModelScope.launch { favStore.toggle(id) }
+    }
 
     /** Shared route state (map is a mode of the map — see RouteSession). */
     val routeState = routeSession.state
@@ -182,6 +190,28 @@ class MapViewModel : ViewModel() {
 
     fun exitRouteMode() {
         routeSession.deactivate()
+    }
+
+    /** "Itinéraire" CTA of the station popover: enter route mode with the station
+     *  as destination. The start is pre-filled from the current location when
+     *  known (mirror of [enterRouteMode]); otherwise the panel opens with only
+     *  the destination set and the user types the start. setEnd() triggers the
+     *  route computation as soon as both endpoints exist (RouteSession). */
+    fun routeToStation(station: Station) {
+        routeSession.activate()
+        viewModelScope.launch {
+            val f = filtersStore.filters.first()
+            val loc = f.userLocation
+            if (routeState.value.start == null && loc != null) {
+                val label = f.searchLabel.orEmpty()
+                routeSession.setStart(loc, label)
+                _routeInput.value = _routeInput.value.copy(startQuery = label)
+            }
+            val endLabel = listOf(station.cp, station.city).filter { it.isNotBlank() }
+                .joinToString(" ").ifBlank { station.brand.orEmpty() }
+            routeSession.setEnd(Coords(station.lat, station.lng), endLabel)
+            _routeInput.value = _routeInput.value.copy(endQuery = endLabel, endSuggestions = emptyList())
+        }
     }
 
     fun onRouteStartQueryChange(q: String) {

@@ -3,7 +3,6 @@
     <string name="app_name">FuelRadar</string>
 
     <string name="tab_map">Mapa</string>
-    <string name="tab_stations">Estaciones</string>
     <string name="tab_favorites">Favoritos</string>
     <string name="tab_trends">Tendencias</string>
     <string name="tab_settings">Ajustes</string>
@@ -22,6 +21,7 @@
     <string name="view_on_map">Ver en el mapa</string>
     <string name="station_fallback">Estación</string>
     <string name="directions">Cómo llegar</string>
+    <string name="more_details">Más detalles</string>
     <string name="share">Compartir</string>
     <string name="favorite">Favorito</string>
 
@@ -40,6 +40,8 @@
     <string name="map_unavailable">Mapa no disponible</string>
     <string name="map_key_missing">Falta la clave de Google Maps. Añade MAPS_API_KEY en local.properties.</string>
     <string name="locate_me">Ubicarme</string>
+    <string name="h24_chip">24/7</string>
+    <string name="no_stations_area">No hay estaciones en esta zona. Amplía el radio en los filtros.</string>
 
     <string name="no_favorites">Sin favoritos</string>
     <string name="no_favorites_hint">Añade estaciones a favoritos desde la lista o el detalle.</string>
